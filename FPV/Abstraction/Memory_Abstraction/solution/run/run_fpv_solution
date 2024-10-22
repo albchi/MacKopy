@@ -1,0 +1,2 @@
+./clean
+vcf -f alu.tcl -verdi

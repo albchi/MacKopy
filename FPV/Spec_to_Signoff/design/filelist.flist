@@ -1,0 +1,3 @@
+../design/fifo.v
+-sverilog
+../sva/fifo_bind.sv
