@@ -1,1 +1,0 @@
-../solution/sim_cov.csh

@@ -1,1 +1,0 @@
-../solution/clean.csh

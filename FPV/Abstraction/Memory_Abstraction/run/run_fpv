@@ -1,2 +1,0 @@
-./clean
-vcf -f run.tcl -verdi

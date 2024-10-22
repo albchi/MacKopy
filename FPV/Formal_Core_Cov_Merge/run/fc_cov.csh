@@ -1,1 +1,0 @@
-../solution/fc_cov.csh

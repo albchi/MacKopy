@@ -1,1 +1,0 @@
-../solution/view_verdi_cov.csh
