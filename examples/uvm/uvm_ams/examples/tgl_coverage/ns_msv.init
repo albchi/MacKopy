@@ -1,0 +1,4 @@
+choose nanosim -n all_spice.spi -C cfg -o outputs/ns;
+no_thru_net_opt all;
+a2d loth=0.6 hith=1.8 node=test.i1.mon;
+

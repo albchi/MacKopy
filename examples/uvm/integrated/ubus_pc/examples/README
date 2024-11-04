@@ -1,0 +1,22 @@
+Ubus example setup (ubus_tb_top.sv)
+
+ubus_if vif();			// ubus_if interface
+dut_dummy dut(...) ;		//  dut 
+test testbench_blk();		//  program block with uvm tests and verification environment 
+
+Partitioning scheme (ubus_topcfg.v)
+
+        partition package uvm_pkg;	// partition for uvm_pkg
+        partition cell dut_dummy;	// partition for dut block 
+        partition cell test;		// partition for test block 
+
+Recompilation scenario 
+
+During recompilation step we are adding a new test in test block. 
+
+Recompilation behavior 
+
+Addition of new test will trigger the recompilation of only test partition and other partitions will not recompiled.
+
+To run the example:
+	Use Makefile

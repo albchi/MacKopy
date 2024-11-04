@@ -1,0 +1,17 @@
+Keywords:
+        Search keywords:       uvm_ams
+	                           
+Technical content:  
+        Title:                 adc_example_uvm
+        Description:           Demonstrates full usage of UVM source generator to verif an ADC.
+                               Shows an advanced testbench that handles mutiple test flavors, 
+                               but also a simple testbench that is not VCS SV based.
+                               Shows how to use assertions on analog nodes.
+                               Works with xa and hsim analog simulators
+
+Location Information:
+
+        PATH:                  $VCS_HOME/doc/examples/uvm/uvm_ams/examples/adc_example_uvm
+
+To run the example:
+	Use Makefile

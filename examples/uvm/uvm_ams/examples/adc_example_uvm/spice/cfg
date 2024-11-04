@@ -1,0 +1,4 @@
+set_sim_eou sim=7 model=7 net=7
+print_node_v *
+print_node_logic *
+set_print_uod out=uod

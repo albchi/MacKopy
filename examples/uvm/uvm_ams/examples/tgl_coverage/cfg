@@ -1,0 +1,2 @@
+print_node_v *
+set_print_format for=fsdb  hier_alias_level=10 shorted_alias=1

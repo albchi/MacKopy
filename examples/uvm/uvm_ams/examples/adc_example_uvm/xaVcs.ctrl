@@ -1,0 +1,5 @@
+use_spice -cell A2DConverter;
+use_verilog -cell anaComparatorChecker;
+choose xa -hspice spice/a2d.b4 -o out/xa;
+set rmap spice/inv.map;
+set bus_format _%d;

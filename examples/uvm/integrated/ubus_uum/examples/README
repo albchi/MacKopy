@@ -1,0 +1,21 @@
+Ubus MX example  (ubus_tb_top.sv)
+----------------------------------------------------------------------
+
+Keywords:
+        Search keywords:       < MX, UBUS, vlogan, vhdlan >	                           technologies used in the example>  
+Technical content:  
+        Title:                 < UBUS in UUM flow>
+        Objective:             < To compile mx UBUS example in UUM flow>
+        Description:           < UBUS Mx Example>
+        Modification Comments: < >
+        Additional setup: None < >
+
+
+ubus_if vif();             // ubus_if interface
+dut_dummy dut(...) ;       //  dut 
+bidir u_bisir (...);       // dummy vhdl bidir child of dut
+test testbench_blk();      //  program block with uvm tests and verification environment 
+
+This example describes how UBUS MX example can be compiled in  mx flow.
+To run the example:
+	Use Makefile

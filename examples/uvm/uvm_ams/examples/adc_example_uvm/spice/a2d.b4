@@ -1,0 +1,289 @@
+***************************************************************************
+*   SYNOPSYS CONFIDENTIAL -- This is an unpublished, proprietary work of
+*   Synopsys, Inc., and is fully protected under copyright and trade secret
+*   laws. You may not view, use, disclose, copy, or distribute this file or
+*   any information contained herein except pursuant to a valid written 
+*   license from Synopsys.
+***************************************************************************
+
+*************************************************************
+*
+*     File Name : a2d.b4 
+*                                                     
+*     About     : 4-bit ADC design
+*                                                
+*     Author    : Shyam Rapaka                    
+*                                               
+*     Date      : 11/16/2008
+* 
+*     Version   : 1.0
+* 
+*************************************************************
+
+.include spice/modelcard.nmos
+.include spice/modelcard.pmos
+
+.subckt invA in out
+M1 out in vdd vdd  P1 W=3.6u L=0.2u rgeomod=1
+M2 out in gnd gnd N1 W=1.8u L=0.2u rgeomod=1
+.ends
+
+.subckt invB in out
+M1 out in vdd vdd  P1 W=12u L=0.2u rgeomod=1
+M2 out in gnd gnd N1 W=6u L=0.2u rgeomod=1
+.ends
+
+.subckt passGate in ctrl ctrlb out
+M1 out ctrlb in vdd P1 W=3.6u L=0.2u rgemod=1
+M2 out ctrl in gnd N1 W=1.8u L=0.2u rgemod=1
+.ends
+
+.subckt nand2 a b out
+MP1 out a vdd vdd  P1 W=3.6u L=0.2u rgeomod=1
+MP2 out b vdd vdd  P1 W=3.6u L=0.2u rgeomod=1
+MN1 out a n1 gnd N1 W=1.8u L=0.2u rgeomod=1
+MN2 n1 b gnd gnd N1 W=1.8u L=0.2u rgeomod=1
+.ends
+
+.subckt nand3 a b c out
+MP1 out a vdd vdd P1 W=3.6u L=0.2u rgemod=1
+MP2 out b vdd vdd P1 W=3.6u L=0.2u rgemod=1
+MP3 out c vdd vdd P1 W=3.6u L=0.2u rgemod=1
+MN1 out a n1 gnd  N1 W=5.4u L=0.2u rgemod=1
+MN2 n1  b n2 gnd  N1 W=5.4u L=0.2u rgemod=1
+MN3 n2  c gnd gnd N1 W=5.4u L=0.2u rgemod=1
+.ends
+
+.subckt and2 a b out
+X1 a b n1 nand2
+X2 n1 out invA
+.ends
+
+.subckt and3 a b c out
+X1 a b c n1 nand3
+X2 n1 out invA
+.ends
+
+.subckt latch d en q 
+X1 d en n1 nand2
+X2 n1 en n2 nand2
+X3 n1 qb q nand2
+X4 q n2 qb nand2
+.ends
+
+.subckt anaComparator vin vref sample sampleb q qb
+XP2 vref sampleb sample n1 passGate
+XP1 vin sample sampleb n1 passGate
+
+C1 n1 n2 0.5e-12
+
+M1 n3 n2 vdd vdd P1 W=2u L=1.5u rgemod=1
+M2 n3 n2 gnd gnd N1 W=2u L=1.5u rgemod=1
+XP3 n2 sampleb sample n3 passGate
+
+XT1 n3 sample  n6 latch
+XT2 n6 sampleb n7 latch
+
+XI1 n7 q invA
+XI2 q qb invA
+
+***** XCHK1 vin vref q sample anaComparatorChecker
+
+.ends
+
+.subckt clkBuf4 clkin co1 co2 co3 co4
+X1 clkin n1 invA
+X2 clkin n2 invA
+X3 n1 co1 invA
+X4 n1 co2 invA
+X5 n2 co3 invA
+X6 n2 co4 invA
+.ends
+
+.subckt pulseGen in pulseout clkout
+XIPC1 in pcb invA
+XIPC2 pcb pc1 invA
+XIPC3 pcb pc1 invA
+XIPC4 pcb pc1 invA
+XIPC5 pc1 pc2 invB
+XIPC6 pc2 pc3 invA
+XIPC7 pc3 pc4 invB
+XIPC7a pc3 pc4 invB
+XIPC7b pc3 pc4 invB
+XIPC8 pc4 pc5 invA
+XIPC9 pc5 pc6 invA
+XIPC10 pc6 pcd invB
+XIPC11 pc6 pcd invB
+XIPC12 pc6 pcd invB
+XIPC13 pc6 pcd invB
+XIPC14 pc6 pc7 invA
+XIPC15 pc7 pc8 invA
+XIPC16 pc8 pc9 invB
+XIPC17 pc9 pc10 invB
+XIPC18 pc10 clkout invB
+
+XAPC1 pc1 pc8 pc_0 and2
+XAPC2 pc_0 pulseout invB
+.ends
+
+.subckt Encoder16to4 pc sclk1 sclk2 sclk3 sclk4 w0 w1 w2 w3 w4 w5 w6 w7 w8 w9 w10 w11 w12 w13 w14 w15 o1 o2 o3 o4
+
+MPC1 ow1 pc vdd vdd P1 W=20u L=0.2u rgemod=1
+MPC2 ow2 pc vdd vdd P1 W=20u L=0.2u rgemod=1
+MPC3 ow3 pc vdd vdd P1 W=20u L=0.2u rgemod=1
+MPC4 ow4 pc vdd vdd P1 W=20u L=0.2u rgemod=1
+
+* Output = 0 (0000)
+MN_0_0 ow1 w0 gnd gnd N1 W=1.8u L=0.2u rgemod=1
+MN_0_1 ow2 w0 gnd gnd N1 W=1.8u L=0.2u rgemod=1
+MN_0_2 ow3 w0 gnd gnd N1 W=1.8u L=0.2u rgemod=1
+MN_0_3 ow4 w0 gnd gnd N1 W=1.8u L=0.2u rgemod=1
+
+* Output = 1 (0001)
+MN_1_1 ow2 w1 gnd gnd N1 W=1.8u L=0.2u rgemod=1
+MN_1_2 ow3 w1 gnd gnd N1 W=1.8u L=0.2u rgemod=1
+MN_1_3 ow4 w1 gnd gnd N1 W=1.8u L=0.2u rgemod=1
+
+* Output = 2 (0010)
+MN_2_0 ow1 w2 gnd gnd N1 W=1.8u L=0.2u rgemod=1
+MN_2_2 ow3 w2 gnd gnd N1 W=1.8u L=0.2u rgemod=1
+MN_2_3 ow4 w2 gnd gnd N1 W=1.8u L=0.2u rgemod=1
+
+* Output = 3 (0011)
+MN_3_2 ow3 w3 gnd gnd N1 W=1.8u L=0.2u rgemod=1
+MN_3_3 ow4 w3 gnd gnd N1 W=1.8u L=0.2u rgemod=1
+
+* Output = 4 (0100)
+MN_4_0 ow1 w4 gnd gnd N1 W=1.8u L=0.2u rgemod=1
+MN_4_1 ow2 w4 gnd gnd N1 W=1.8u L=0.2u rgemod=1
+MN_4_3 ow4 w4 gnd gnd N1 W=1.8u L=0.2u rgemod=1
+
+* Output = 5 (0101)
+MN_5_1 ow2 w5 gnd gnd N1 W=1.8u L=0.2u rgemod=1
+MN_5_3 ow4 w5 gnd gnd N1 W=1.8u L=0.2u rgemod=1
+
+* Output = 6 (0110)
+MN_6_0 ow1 w6 gnd gnd N1 W=1.8u L=0.2u rgemod=1
+MN_6_3 ow4 w6 gnd gnd N1 W=1.8u L=0.2u rgemod=1
+
+* Output = 7 (0111)
+MN_7_3 ow4 w7 gnd gnd N1 W=1.8u L=0.2u rgemod=1
+
+* Output = 8 (1000)
+MN_8_0 ow1 w8 gnd gnd N1 W=1.8u L=0.2u rgemod=1
+MN_8_1 ow2 w8 gnd gnd N1 W=1.8u L=0.2u rgemod=1
+MN_8_2 ow3 w8 gnd gnd N1 W=1.8u L=0.2u rgemod=1
+
+* Output = 9 (1001)
+MN_9_1 ow2 w9 gnd gnd N1 W=1.8u L=0.2u rgemod=1
+MN_9_2 ow3 w9 gnd gnd N1 W=1.8u L=0.2u rgemod=1
+
+* Output = 10 (1010)
+MN_10_0 ow1 w10 gnd gnd N1 W=1.8u L=0.2u rgemod=1
+MN_10_2 ow3 w10 gnd gnd N1 W=1.8u L=0.2u rgemod=1
+
+* Output = 11 (1011)
+MN_11_2 ow3 w11 gnd gnd N1 W=1.8u L=0.2u rgemod=1
+
+* Output = 12 (1100)
+MN_12_0 ow1 w12 gnd gnd N1 W=1.8u L=0.2u rgemod=1
+MN_12_1 ow2 w12 gnd gnd N1 W=1.8u L=0.2u rgemod=1
+
+* Output = 13 (1101)
+MN_13_1 ow2 w13 gnd gnd N1 W=1.8u L=0.2u rgemod=1
+
+* Output = 14 (1110)
+MN_14_0 ow1 w14 gnd gnd N1 W=1.8u L=0.2u rgemod=1
+
+* Output = 15 (1111)
+
+XIO1 ow1 ow1b invA
+XIO2 ow2 ow2b invA
+XIO3 ow3 ow3b invA
+XIO4 ow4 ow4b invA
+XI05 ow1b ol1 invA
+XI06 ow2b ol2 invA
+XI07 ow3b ol3 invA
+XI08 ow4b ol4 invA
+
+XL1 ol1 sclk1 o1 latch
+XL2 ol2 sclk2 o2 latch
+XL3 ol3 sclk3 o3 latch
+XL4 ol4 sclk4 o4 latch
+
+***** XEncChk sclk1 w0 w1 w2 w3 w4 w5 w6 w7 w8 w9 w10 w11 w12 w13 w14 w15 o1 o2 o3 o4 encoderChecker
+
+.ends
+
+.subckt A2DConverter in s o1 o2 o3 o4 res=100
+
+XA1 s sb invA
+
+R1 gnd vr1 10
+R2 vr1 vr2 10
+R3 vr2 vr3 10
+R4 vr3 vr4 10
+R5 vr4 vr5 10
+R6 vr5 vr6 10
+R7 vr6 vr7 10
+R8 vr7 vr8 10
+R9 vr8 vr9 10
+R10 vr9 vr10 10
+R11 vr10 vr11 10
+R12 vr11 vr12 10
+R13 vr12 vr13 10
+R14 vr13 vr14 10
+R15 vr14 vr15 10
+R16 vr15 vdd 10
+
+XPG s pc sclk pulseGen
+
+XB1 s s1 s2 s3 s4 clkBuf4
+XB2 sb sb1 sb2 sb3 sb4 clkBuf4
+XB3 sclk sclk1 sclk2 sclk3 sclk4 clkBuf4
+
+XC01 in vr1 sb1 s1 q1 q1b anaComparator
+XC02 in vr2 sb1 s1 q2 q2b anaComparator
+XC03 in vr3 sb1 s1 q3 q3b anaComparator
+XC04 in vr4 sb1 s1 q4 q4b anaComparator
+XC05 in vr5 sb2 s2 q5 q5b anaComparator
+XC06 in vr6 sb2 s2 q6 q6b anaComparator
+XC07 in vr7 sb2 s2 q7 q7b anaComparator
+XC08 in vr8 sb2 s2 q8 q8b anaComparator
+XC09 in vr9 sb3 s3 q9 q9b anaComparator
+XC10 in vr10 sb3 s3 q10 q10b anaComparator
+XC11 in vr11 sb3 s3 q11 q11b anaComparator
+XC12 in vr12 sb3 s3 q12 q12b anaComparator
+XC13 in vr13 sb4 s4 q13 q13b anaComparator
+XC14 in vr14 sb4 s4 q14 q14b anaComparator
+XC15 in vr15 sb4 s4 q15 q15b anaComparator
+XC16 in vdd sb4 s4 q16 q16b anaComparator
+
+XI1  q1b w0b invA
+XI2  w0b w0 invA
+XN01 q2b q1 w1 and2
+XN02 q3b q2 q1 w2 and3
+XN03 q4b q3 q2 w3 and3
+XN04 q5b q4 q3 w4 and3
+XN05 q6b q5 q4 w5 and3
+XN06 q7b q6 q5 w6 and3
+XN07 q8b q7 q6 w7 and3
+XN08 q9b q8 q7 w8 and3
+XN09 q10b q9 q8 w9 and3
+XN10 q11b q10 q9 w10 and3
+XN11 q12b q11 q10 w11 and3
+XN12 q13b q12 q11 w12 and3
+XN13 q14b q13 q12 w13 and3
+XN14 q15b q14 q13 w14 and3
+XN15 q15 q14 w15 and2
+
+XEnc1 pc sclk1 sclk2 sclk3 sclk4 w0 w1 w2 w3 w4 w5 w6 w7 w8 w9 w10 w11 w12 w13 w14 w15 o1 o2 o3 o4 Encoder16to4
+
+.ends
+
+.option reltol=1e-3 post
+.print tran s
+.print v(*)
+.global vdd gnd
+vsu vdd gnd 1.8
+.end

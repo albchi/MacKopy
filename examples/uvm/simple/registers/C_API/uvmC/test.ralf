@@ -1,0 +1,76 @@
+  block spGlobalReg {
+        bytes 8;
+        register myMACaddressReg @'h0 {
+            bytes 8;
+            field macAddr @'h0 {
+                bits 48;
+                access rw;
+                doc {
+                    My MAC Address
+                }
+            }
+            doc {
+                My MAC Address for ingress packet classificationMy MAC Address for ingress packet classification
+            }
+        }
+        register spIpProtReg @'h8 {
+            bytes 8;
+            field igsIpProtLISP @'h0 {
+                bits 8;
+                access rw;
+                doc {
+                    Special Port LISP IP Protocol
+                }
+            }
+            doc {
+                Special Port IP Protocol for packet processingSpecial Port IP Protocol for packet processing
+            }
+        }
+        register igsLISPStatReg @'h10 {
+            bytes 8;
+            field bcamFull @'h10 {
+                bits 8;
+                access ro;
+                doc {
+                    Per Slice Ingress Source Route Locator Lookup CAM Full Status
+                }
+            }
+            field lsuFifoFull @'h8 {
+                bits 8;
+                access ro;
+                doc {
+                    Per Slice Ingress Locator and Status Update (LSU) FIFO Full Status 
+                }
+            }
+            field lsuFifoNotEmpty @'h0 {
+                bits 8;
+                access ro;
+                doc {
+                    Per Slice Ingress Locator and Status Update (LSU) FIFO Not Empty Status 
+                }
+            }
+            doc {
+                Special Port LISP Status for ingress operationSpecial Port LISP Status for ingress operation
+            }
+        }
+        register igsLISPDestRLOCReg[16] @'h100+'h8 {
+            bytes 8;
+            field valid @'h20 {
+                access rw;
+                doc {
+                    Ingress LISP Destination RLOC is Valid
+                }
+            }
+            field destRLOC @'h0 {
+                bits 32;
+                access rw;
+                doc {
+                    Ingress LISP Destination RLOC
+                }
+            }
+            doc {
+                Destination Router Location for ingresss LISP operationDestination Router Location for ingresss LISP operation
+            }
+        }
+    }
+

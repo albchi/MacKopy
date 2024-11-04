@@ -1,0 +1,395 @@
+------------------------------------------------------------
+CustomSim RHEL32 H-2013.03-SP1 (built 00:43:18 May 24 2013)
+------------------------------------------------------------
+
+Build id: 2660222
+
+Command Line: xa -c ssl3 -o out/xa -hspice simv.daidir/xa_cosim_top.spi -c simv.daidir/xaAmsCFG -c
+simv.daidir/xaAmsCFGRun
+
+Start time: Mon Jul 22 22:07:17 2013
+
+=> INITIAL SUMMARY: Time taken = 0 sec
+
+Virtual memory: 211M, Peak Virtual Memory: 211M, Physical Memory: 102M.
+
+Environment variables set:
+-------------------------------------------------------------------------------
+| name                 | value                                                |
+|----------------------+------------------------------------------------------|
+| XA_GCC               | /global/apps4/xa_2013.03-SP1/GNU/amd64/gcc-4.5.2-sta |
+|                      | tic/bin/gcc -m32                                     |
+| TCL_LIBRARY          | /global/apps4/xa_2013.03-SP1/auxx/ns/machind/lib/tcl |
+| PVA_HDL              | 1                                                    |
+| SNPS_PLATFORM        | linux                                                |
+| XA_HOME              | /global/apps4/xa_2013.03-SP1                         |
+| XA_ARCH              | linux                                                |
+| HOME                 | /remote/us01home15/asantosh                          |
+| PWD                  | /slowfs/vginfrascratch1/asantosh/Doc_examples/instal |
+|                      | l_uvm_ams/uvm_ams/examples/adc_example_uvm           |
+| LD_LIBRARY_PATH      | /usr/local/lib:/global/libs/vg_gnu_2013.06/linux/gcc |
+|                      | -4.2.2_32/lib                                        |
+| XA_VERSION_FILE      | /global/apps4/xa_2013.03-SP1/etc/xa/xa_version       |
+| PVA_COSIM            | 1                                                    |
+| XA_TEST_AMS_VPI      | 1                                                    |
+| SNPSLMD_LICENSE_FILE | 26585@us01-lic12:26585@us01-lic10:/global/apps4/vcs_ |
+|                      | 2013.06/flexlm//license.dat                          |
+| LM_LICENSE_FILE      | 26585@us01-lic12:26585@us01-lic10:27000@vgintsb54    |
+|-----------------------------------------------------------------------------|
+
+System information:
+----------------------------------------------------------------------------
+|                  | User id        | asantosh                             |
+|                  | Host name      | peemt504                             |
+|                  | pid            | 16355                                |
+| ---------------- |                |                                      |
+| Operating System | name           | Linux                                |
+|                  | version        | 2.6.18-194.8.1.el5                   |
+| ---------------- |                |                                      |
+| Hardware data    | name           | x86_64                               |
+|                  | processor type | x86_64                               |
+|                  | platform name  | x86_64                               |
+|                  | model name     | Intel(R) Xeon(R) CPU X5670 @ 2.93GHz |
+|                  | number of cpu  | 12                                   |
+|                  | cpu MHz        | 2933.540                             |
+|                  | cache size     | 12288 KB                             |
+|--------------------------------------------------------------------------|
+
+License initial existence checking succeeded
+
+=> FE/LICENSE EXISTENCE CHECK SUMMARY: Time taken = 0 sec, Wall time = 1 sec
+
+Virtual memory: 231M, Peak Virtual Memory: 231M, Physical Memory: 103M.
+
+Initialization file "xa.ini" was not found.
+
+Warning: (a2d.b4:290) .END statement was encountered in an included file. It will be ignored.
+
+Total number of statements parsed: 210
+
+=> FE/PARSER SUMMARY: Time taken = 0 sec
+
+Virtual memory: 233M, Peak Virtual Memory: 233M, Physical Memory: 105M.
+
+Commands
+---------------------------------------------------
+| command                      | scope | location |
+|------------------------------+-------+----------|
+| set_sim_case -case sensitive |       | (ssl3:1) |
+|-------------------------------------------------|
+
+Options
+-----------------------------------------------------
+| name  | type  | value | location                  |
+|-------+-------+-------+---------------------------|
+| POST  | enum  | FSDB  | (a2d.b4:284)              |
+| SCALM | value | 1     | (spice/modelcard.nmos:14) |
+|---------------------------------------------------|
+
+Summary of data compression for both waveform and diagnostic features
+-------------------------------------------------------------------------------
+| Data compression type           | Setting | Command to adjust it            |
+|---------------------------------+---------+---------------------------------|
+| time roundoff resolution        | 1e-13   | set_waveform_option -tres       |
+| slope-based voltage compression | 1e-06   | set_waveform_option -compress_v |
+| slope-based current compression | 1e-12   | set_waveform_option -compress_i |
+|-----------------------------------------------------------------------------|
+
+Summary of data compression for waveform only
+-----------------------------------------------------------------------
+| Data compression type       | Setting | Command to adjust it        |
+|-----------------------------+---------+-----------------------------|
+| voltage roundoff resolution | 1e-06   | set_waveform_option -grid_v |
+| current roundoff resolution | 1e-12   | set_waveform_option -grid_i |
+|---------------------------------------------------------------------|
+
+Warning: "Unsupported option" occurs 1 times.
+
+Following options are not supported:
+---------------------------------
+|              | name   | value |
+|--------------+--------+-------|
+| (a2d.b4:284) | reltol | 1e-3  |
+|-------------------------------|
+
+Warning: .PRINT statements are treated like .PROBE statements if configuration command "enable_print_statement 1" is
+not given
+
+Source Files:
+--------------------------------
+| name                 | type  |
+|----------------------+-------|
+| a2d.b4               | ideal |
+| spice/modelcard.nmos | ideal |
+| spice/modelcard.pmos | ideal |
+| ssl3                 | ideal |
+|------------------------------|
+
+Warning: "Warnings/Messages from CMI" occurs 10 times.
+
+CMI Warnings/Messages:
+-----------------------------------------------------------------------------------------
+|              | CMI Warnings/Messages                                                  |
+|--------------+------------------------------------------------------------------------|
+| (a2d.b4:28)  | (N1:tb.DUT.XI2.M2)Zero resistance returned from RdseffGeo              |
+|              | (N1:tb.DUT.XI2.M2)Zero resistance returned from RdseffGeo              |
+| (a2d.b4:27)  | (P1:tb.DUT.XI2.M1)Zero resistance returned from RdseffGeo              |
+|              | (P1:tb.DUT.XI2.M1)Zero resistance returned from RdseffGeo              |
+| (a2d.b4:33)  | (N1:tb.DUT.XPG.XIPC5.M2)Zero resistance returned from RdseffGeo        |
+|              | (N1:tb.DUT.XPG.XIPC5.M2)Zero resistance returned from RdseffGeo        |
+| (a2d.b4:32)  | (P1:tb.DUT.XPG.XIPC5.M1)Zero resistance returned from RdseffGeo        |
+|              | (P1:tb.DUT.XPG.XIPC5.M1)Zero resistance returned from RdseffGeo        |
+| (a2d.b4:81)  | ( tb.DUT.XC07.M2)Unsupported instance parameter 'rgemod'. Ignored.     |
+| (a2d.b4:80)  | ( tb.DUT.XC07.M1)Unsupported instance parameter 'rgemod'. Ignored.     |
+| (a2d.b4:38)  | ( tb.DUT.XC07.XP2.M2)Unsupported instance parameter 'rgemod'. Ignored. |
+| (a2d.b4:37)  | ( tb.DUT.XC07.XP2.M1)Unsupported instance parameter 'rgemod'. Ignored. |
+| (a2d.b4:53)  | ( tb.DUT.XN08.X1.MN2)Unsupported instance parameter 'rgemod'. Ignored. |
+| (a2d.b4:133) | ( tb.DUT.XEnc1.MPC3)Unsupported instance parameter 'rgemod'. Ignored.  |
+|---------------------------------------------------------------------------------------|
+
+Nodes statistics:
+-----------------
+| type  | count |
+|-------+-------|
+| TOTAL | 495   |
+|---------------|
+
+Element statistics:
+----------------------------------------------
+| type      | format | count | unique models |
+|-----------+--------+-------+---------------|
+| NMOS      | HSPICE | 527   | 5             |
+| PMOS      | HSPICE | 499   | 5             |
+| V         | HSPICE | 1     | 1             |
+| SIMPLE Cc |        | 16    |               |
+| SIMPLE Cg |        | 2     |               |
+| SIMPLE R  |        | 16    |               |
+| TOTAL     |        | 1063  | 11            |
+|--------------------------------------------|
+
+License check: effective XA_SHARED_LICENSE_ORDER = hsim-sc:hsim-ms:xsim:fastspice_xa+nanosim:fastspice_xa+hsim-xl
+
+License checking succeeded
+
+=> FE/LICENSE CHECK SUMMARY: Time taken = 0 sec, Wall time = 1 sec
+
+Virtual memory: 235M, Peak Virtual Memory: 235M, Physical Memory: 109M.
+
+Summary of License Checking
+-----------------------------------------------
+| Effective elem. count | 1026                |
+| Flexlm version        | 10.8                |
+| Key                   | hsim-cosim          |
+| Copies                | 1                   |
+| Version               | 2013.03             |
+| Expiration date       | 31-jan-2014/2014.12 |
+| Server                | us01-lic12          |
+|                       | ---------------     |
+| Key                   | hsim-sc             |
+| Copies                | 1                   |
+| Version               | 2013.03             |
+| Expiration date       | 31-jan-2014/2014.12 |
+| Server                | us01-lic12          |
+|---------------------------------------------|
+
+Summary of output options and statements that contain wildcard:
+-----------------------------------------------------
+| Location     | Pattern/Option | Number of matches |
+|--------------+----------------+-------------------|
+| (a2d.b4:286) | v(*)           | 495               |
+|---------------------------------------------------|
+
+Warning: "Output analysis statement skipped" occurs 1 times.
+
+Following statements are skipped:
+-----------------------------------------------------
+|              | statement | reason                 |
+|--------------+-----------+------------------------|
+| (a2d.b4:285) | (print)   | undefined parameter: s |
+|---------------------------------------------------|
+
+CAP HISTOGRAM
+------------------------------------------------------------
+| cap range        | number of caps | percentage | comment |
+|------------------+----------------+------------+---------|
+| > 1e-10          | 0              | 0.000000   |         |
+| (1e-11, 1e-10]   | 0              | 0.000000   |         |
+| (5e-12, 1e-11]   | 0              | 0.000000   |         |
+| (1e-12, 5e-12]   | 0              | 0.000000   |         |
+| (5e-13, 1e-12]   | 0              | 0.000000   |         |
+| (1e-13, 5e-13]   | 16             | 100.000000 |         |
+| (7.5e-14, 1e-13] | 0              | 0.000000   |         |
+| (5e-14, 7.5e-14] | 0              | 0.000000   |         |
+| (2.5e-14, 5e-14] | 0              | 0.000000   |         |
+| (1e-14, 2.5e-14] | 0              | 0.000000   |         |
+| (7.5e-15, 1e-14] | 0              | 0.000000   |         |
+| (5e-15, 7.5e-15] | 0              | 0.000000   |         |
+| (2.5e-15, 5e-15] | 0              | 0.000000   |         |
+| (1e-15, 2.5e-15] | 0              | 0.000000   |         |
+| (7.5e-16, 1e-15] | 0              | 0.000000   |         |
+| (5e-16, 7.5e-16] | 0              | 0.000000   |         |
+| (2.5e-16, 5e-16] | 0              | 0.000000   |         |
+| (1e-16, 2.5e-16] | 0              | 0.000000   |         |
+| (7.5e-17, 1e-16] | 0              | 0.000000   |         |
+| (5e-17, 7.5e-17] | 0              | 0.000000   |         |
+| (2.5e-17, 5e-17] | 0              | 0.000000   |         |
+| (1e-17, 2.5e-17] | 0              | 0.000000   |         |
+| (5e-18, 1e-17]   | 0              | 0.000000   |         |
+| (1e-18, 5e-18]   | 0              | 0.000000   |         |
+| (5e-19, 1e-18]   | 0              | 0.000000   |         |
+| (1e-19, 5e-19]   | 0              | 0.000000   |         |
+| (0, 1e-19]       | 0              | 0.000000   |         |
+| CCAP total       | 16             | 100        |         |
+| Negative cap     | 0              |            |         |
+| open-circuit     | 0              |            |         |
+| GCAP in netlist  | 2              |            |         |
+| total            | 18             |            |         |
+|----------------------------------------------------------|
+
+POSITIVE RESISTOR HISTOGRAM.
+------------------------------------------------
+| res range       | number of res | percentage |
+|-----------------+---------------+------------|
+| > 1e+13         | 0             | 0.000000   |
+| (1e+12, 1e+13]  | 0             | 0.000000   |
+| (1e+11, 1e+12]  | 0             | 0.000000   |
+| (1e+10, 1e+11]  | 0             | 0.000000   |
+| (1e+09, 1e+10]  | 0             | 0.000000   |
+| (1e+08, 1e+09]  | 0             | 0.000000   |
+| (1e+07, 1e+08]  | 0             | 0.000000   |
+| (1e+06, 1e+07]  | 0             | 0.000000   |
+| (100000, 1e+06] | 0             | 0.000000   |
+| (10000, 100000] | 0             | 0.000000   |
+| (1000, 10000]   | 0             | 0.000000   |
+| (100, 1000]     | 0             | 0.000000   |
+| (10, 100]       | 16            | 100.000000 |
+| (1, 10]         | 0             | 0.000000   |
+| (0.1, 1]        | 0             | 0.000000   |
+| (0.01, 0.1]     | 0             | 0.000000   |
+| (0.001, 0.01]   | 0             | 0.000000   |
+| (0.0001, 0.001] | 0             | 0.000000   |
+| (1e-05, 0.0001] | 0             | 0.000000   |
+| (1e-06, 1e-05]  | 0             | 0.000000   |
+| (1e-07, 1e-06]  | 0             | 0.000000   |
+| <= 1e-07        | 0             | 0.000000   |
+| RES total       | 16            | 100        |
+|----------------------------------------------|
+
+=> FE SUMMARY: Time taken = 0 sec
+
+Virtual memory: 235M, Peak Virtual Memory: 235M, Physical Memory: 112M.
+
+Entering DC method 1
+
+DC method 1 progress 10% done
+
+DC method 1 progress 20% done
+
+DC method 1 progress 30% done
+
+DC method 1 progress 40% done
+
+DC method 1 progress 50% done
+
+DC method 1 progress 60% done
+
+DC method 1 progress 70% done
+
+DC method 1 progress 80% done
+
+DC method 1 progress 90% done
+
+DC method 1 progress 100% done
+
+DC has successfully converged with method 1 ( 0 sec )
+
+=> DC SUMMARY: Time taken = 0 sec
+
+Virtual memory: 248M, Peak Virtual Memory: 248M, Physical Memory: 120M.
+
+Summary of probed signals and waveforms:
+-----------------------------------------
+| Total number of signals probed  | 495 |
+| Voltage probes                  | 495 |
+| Current probes                  | 0   |
+| Other probes                    | 0   |
+| Total waveforms written to file | 495 |
+| Logic waveforms                 | 0   |
+| Other waveforms                 | 495 |
+| Waveform aliases                | 0   |
+|---------------------------------------|
+
+Summary of Partition for Transient Analysis:
+-------------------------------------
+| number of | devices   | nodes     |
+| regions   | in region | in region |
+|-----------+-----------+-----------|
+| 1         | 2         | 2         |
+| 1         | 1         | 2         |
+| 1         | 2         | 2         |
+| 91        | 3         | 1         |
+| 75        | 6         | 2         |
+| 13        | 9         | 3         |
+| 4         | 10        | 1         |
+| 32        | 12        | 4         |
+| 1         | 12        | 4         |
+| 4         | 13        | 4         |
+| 1         | 211       | 75        |
+|-----------------------------------|
+
+Largest partition details
+---------------------------------------------------------
+| Total number of elements       | 211                  |
+| Total MOS                      | 120                  |
+| Total non-MOS                  | 91                   |
+| Total number of nodes          | 75                   |
+| Nodes with maximum connections | : tb.DUT.sb4 (31)    |
+|                                | : tb.DUT.sb3 (31)    |
+|                                | : tb.DUT.sb2 (31)    |
+|                                | : tb.DUT.sb1 (31)    |
+|                                | : tb.DUT.s4 (31)     |
+|                                | : tb.DUT.s3 (31)     |
+|                                | : tb.DUT.s2 (31)     |
+|                                | : tb.DUT.s1 (31)     |
+|                                | : tb.DUT.XC15.n3 (7) |
+|                                | : tb.DUT.XC14.n3 (7) |
+|-------------------------------------------------------|
+
+Total Number of Regions: 224
+
+=> TR/SETUP SUMMARY: Time taken = 1 sec
+
+Virtual memory: 274M, Peak Virtual Memory: 274M, Physical Memory: 122M.
+
+Synchronous Groups
+----------------------------------------------
+| Group Id | Synched Regions | Synched Nodes |
+|--------------------------------------------|
+
+Engine starting time = (Mon Jul 22 22:07:20 2013 )
+
+Engine ending time = (Mon Jul 22 22:07:24 2013 )
+
+=> TR/ENGINE SUMMARY: Time taken = 3 sec, Wall time = 0 sec
+
+Virtual memory: 287M, Peak Virtual Memory: 287M, Physical Memory: 133M.
+
+
+
+=> TR/ANALYSIS SUMMARY: Time taken = 0 sec, Wall time = 0 sec
+
+Virtual memory: 288M, Peak Virtual Memory: 288M, Physical Memory: 134M.
+
+=> TR SUMMARY: Time taken = 0 sec
+
+Virtual memory: 288M, Peak Virtual Memory: 288M, Physical Memory: 134M.
+
+Peak Virtual Memory = 288 M
+
+Grand Total Time = 6 sec
+
+Total Wall Time = 7 sec
+
+Total number of comparison errors = 0
+
+XA done (Mon Jul 22 22:07:24 2013 ).
