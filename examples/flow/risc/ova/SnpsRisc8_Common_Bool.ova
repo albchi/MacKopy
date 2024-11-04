@@ -1,0 +1,98 @@
+/*********************************************************************
+ * SYNOPSYS CONFIDENTIAL                                             *
+ *                                                                   *
+ * This is an unpublished, proprietary work of Synopsys, Inc., and   *
+ * is fully protected under copyright and trade secret laws. You may *
+ * not view, use, disclose, copy, or distribute this file or any     *
+ * information contained herein except pursuant to a valid written   *
+ * license from Synopsys.                                            *
+ *********************************************************************/
+
+// Including header file to customize the assertions
+
+`include "../../ova/SnpsRisc8.ovah"
+
+// Common Boolean are defined here.
+
+template SnpsRisc8_Cpu_Bool (debuginst, 
+                             clk,  
+                             option = 8'b0, 
+                             debugpc, 
+                             debugstatus, 
+                             debugw, 
+                             fsr = 8'b0, 
+                             fileaddr = 7'b0, 
+                             aluz = 1'b0,  
+                             aluasel = 2'b00, 
+                             alubsel = 2'b00,  
+                             stacklevel = 2'b00, 
+                             prescaler = 8'b0): {
+clock posedge clk {
+
+	bool reg_monitor(reg, value):`ifdef SnpsRisc8_FORMAL
+                                         (reg == value);
+                                      `else
+                                         (reg === value);
+                                      `endif
+
+
+bool status_reset: reg_monitor(debugstatus, 8'h18);
+bool option_reset: option == 8'h3F;
+bool pc_reset: debugpc ==  11'h7FF;
+bool inst_reset: debuginst == 12'h000;
+bool w_reset: debugw == 8'h00;
+bool fsr_reset: fsr == 8'h00;
+bool stacklevel_rst: stacklevel == 2'b00;
+bool prescaler_rst: prescaler == 8'h00;
+bool clr: debuginst[11:6] == 6'b0000_01;
+bool specialsel: fileaddr[4:3] == 2'b00 ;
+bool regfilesel: ( fileaddr[4:3] != 2'b00 && fileaddr[6:2] != 5'b11111);
+bool expsel: ( fileaddr == 7'h7c  ||  fileaddr == 7'h7d || 
+		fileaddr == 7'h7e || fileaddr == 7'h7f); 
+bool pcl_clr: debugpc[7:0] == 8'h00;
+bool sleep: debuginst == 12'b0000_0000_0011;
+bool option_inst: debuginst == 12'b0000_0000_0010;
+bool tris: (debuginst[11:3] == 9'h00);
+bool alua_sel: aluasel == 2'b01;
+bool alub_sel: alubsel == 2'b01;
+bool call: debuginst[11:8] == 4'b1001;
+bool branch:  debuginst[11:10] == 4'b10;
+bool retlw: debuginst[11:8] == 4'b1000;
+bool ADDWF: debuginst[11:6] == 6'b0001_11;
+bool ANDWF: debuginst[11:6] == 6'b0001_01;
+bool movwf: debuginst[11:5] == 7'b0000_001; 
+bool MOVF: debuginst[11:6] == 6'b0010_00;
+bool COMPF: debuginst[11:6] == 6'b0010_01;
+bool decf:  debuginst[11:6] == 6'b0000_11;
+bool DECFSZ: debuginst[11:6] == 6'b0010_11;
+bool INCF:  debuginst[11:6] == 6'b0010_10;
+bool INCFSZ: debuginst[11:6] == 6'b0011_11;
+bool IORWF: debuginst[11:6] == 6'b0001_00;
+bool RLF: debuginst[11:6] == 6'b0011_01;
+bool RRF: debuginst[11:6] == 6'b0011_00;
+bool SUBWF: debuginst[11:6] == 6'b0000_10;
+bool SWAPF: debuginst[11:6] == 6'b0011_10;
+bool XORWF: debuginst[11:6] == 6'b0001_10;
+bool ANDLW: debuginst[11:8] == 4'b1110;
+bool IORLW: debuginst[11:8] == 4'b1101;
+bool XORLW: debuginst[11:8] == 4'b1111;
+bool movlw: debuginst[11:8] == 4'b1100;
+bool SKIP_BTFSC: (debuginst[11:8] == 4'b0110 && aluz == 1'b1);
+bool SKIP_BTFSS: (debuginst[11:8] == 4'b0111 && aluz == 1'b0);
+bool SKIP_DECFSZ: (DECFSZ && aluz == 1'b1);
+bool SKIP_INCFSZ: (INCFSZ && aluz == 1'b1);
+bool skip: (SKIP_BTFSC || SKIP_BTFSS || SKIP_DECFSZ || SKIP_INCFSZ);
+bool movf_pc: debuginst == 12'b0010_0010_0010;
+bool movwf_pc: debuginst == 12'b0000_0010_0010;
+bool BIT: debuginst[11:9] == 3'b010;
+
+bool byte_inst: ( ADDWF || ANDWF || COMPF || decf || DECFSZ || INCF || INCFSZ || 
+	IORWF || RLF || RRF || SUBWF || SWAPF || XORWF || MOVF || movwf  );
+
+bool literal: (ANDLW || IORLW || XORLW); 
+bool carry_inst: ( ADDWF || SUBWF || RLF || RRF);
+bool zero_inst: ( clr || ADDWF || ANDWF || COMPF || decf || INCF || IORWF
+                  || SUBWF || XORWF || MOVF || ANDLW || IORLW || XORLW);
+
+}
+}

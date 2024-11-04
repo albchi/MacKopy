@@ -1,0 +1,66 @@
+
+
+Keywords:
+		Search keywords: NTB OVA DirectC Coverage
+ 
+Technical content:
+		Title: 	 VERIFICATION CAPABILITIES 
+		Objective: To  demonstrate VCS built-in verification capabilities.	
+		Description: 	This example shows the VCS built-in verification capabilities using Native Test Bench Technology, OpenVera Assertion(OVA), DirectC and Coverage Metric.
+================
+Design Overview:
+================
+	The Design Under Test (DUT) used with this example is a free IP, which is a simple 8-bit micro-controller implemented in Verilog HDL.  
+	Please read the risc8doc.html for the architecture and specification in doc/ directory. More information about this IP can be found at http://www.free-ip.com.
+====================
+Test Bench Overview:
+====================
+	Native Testbench language is used as a driver of all the test vectors to the DUT. OpenVera Assertion(OVA) language is used to check the functionality correctness. Two reference models, ALU and DECODER, are implemented in C with DirectC interface. The self checking mechanism for this reference models is also implanted the testbench using Native Testbench. Coverage can be observed after the each run using Cover Metric.
+================
+Directory Setup:
+================
+This example contains following directory setup:
+		                risc8
+			          |
+   ---------------------------------------------------------------
+  |	  |	  |	  |	  |	  |	  |	  |	  |
+directc  doc     dut   HOW_TO    ntb     ova    README   run     util
+          	                  |
+	                         prog
+                                      
+	directc : This directory contains reference model for alu and decoder block of the RISC8 design written in C using DirectC interface with Native Test Bench.
+	doc : This directory contains design document.
+	
+	dut : This directory contains Verilog HDL code.
+	HOW_TO : This file explains the flow and steps to run different features with VCS.
+	         
+	ntb : This directory contains test bench code written in Native Vera language.
+	ntb/prog : This directory contains programs to run with the RISC8 processor, includes ASM, ROM and HEX files.
+	ova : This directory contains assertion code written in Open Vera Assertion (OVA) language.
+	      
+	README : This file.	      
+	run : This directory contains run commands to run the design.
+	util : This directory contains utility to convert Intel HEX format to Verilog format which is a part of the IP package.
+
+		Additional setup: Make sure that you set path for gcc installation.
+					set path=(path/to/installation/gcc/bin $path)
+					setenv VCS_CC gcc
+ 
+Steps to run the example:
+1) cd run  -->  There were 5 run directories : run_basic,run_basic_fcov,run_basic_ova,run_exp and run_random presented under this direcotry.
+2) To run each directory:
+	
+Using shell scripts:
+		clean.csh   	-- To clean up the log files and executable of previous run	
+ 		comp.csh 	-- To compile the design.
+		run.csh 	-- To run the design 
+Using Makefile:
+		clean   	-- To clean up the log files and executable of previous run	
+ 		comp 		-- To compile the design.
+		run 		-- To run the design. 
+Also please go through individual README's presented in each directory to understand the run scripts and source files.
+	
+Location Information:
+		PATH: 			$VCS_HOME/doc/examples/flow/risc
+		DIAGRAMS: 		None
+		Cross Reference:	$VCS_HOME/doc/UserGuide/vcs.pdf and ./doc

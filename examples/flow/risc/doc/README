@@ -1,0 +1,11 @@
+==========================================
+Description of the files in this directory
+==========================================
+
+risc8doc.html : This files is provided by the developer of the DUT code and
+		used as it is. It expains the details of the risc8 architecture
+		and specification.
+
+NOTE : We have changed the expansion circuit block with the traffic light 
+       controller block to show more functionality with VCS. Other files
+       in dut/ directory are used as it is, provided by the developer. 

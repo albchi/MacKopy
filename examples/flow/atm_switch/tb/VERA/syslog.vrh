@@ -1,0 +1,46 @@
+/////////////////////////////////////////////////////////////////
+// Vera Header file created from syslog.vr 
+/////////////////////////////////////////////////////////////////
+#ifndef INC__TMP_SYSLOG_VRH
+#define INC__TMP_SYSLOG_VRH
+
+extern class syslog { 
+  task new (
+    string name
+  );
+  task expect (
+    integer n_warns = 0,
+    integer n_errs = 0,
+    string which = "this"
+  );
+  task set_debug (
+    bit on_off = 0,
+    string which = "this"
+  );
+  task report (
+    string which = "this"
+  );
+  task debug (
+    string msg
+  );
+  task note (
+    string msg
+  );
+  task warning (
+    string msg
+  );
+  task error (
+    string msg
+  );
+  task fatal (
+    string msg
+  );
+  task note_prefix (
+  );
+  task warning_prefix (
+  );
+  task error_prefix (
+  );
+}
+
+#endif

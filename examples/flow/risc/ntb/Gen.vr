@@ -1,0 +1,104 @@
+/*********************************************************************
+ * SYNOPSYS CONFIDENTIAL                                             *
+ *                                                                   *
+ * This is an unpublished, proprietary work of Synopsys, Inc., and   *
+ * is fully protected under copyright and trade secret laws. You may *
+ * not view, use, disclose, copy, or distribute this file or any     *
+ * information contained herein except pursuant to a valid written   *
+ * license from Synopsys.                                            *
+ *********************************************************************/
+
+// class object to generate a valid sequence/program
+
+#include <vera_defines.vrh>
+#include "Instr.vr"
+#include "regressions.vrh"
+
+class rand_prog_gen { 
+  // declaration of data members
+  integer i=0;
+  integer result;
+  integer count;
+  integer j;
+  bit [7:0] temp_k;
+  bit [11:0] mem[2048]; // internal memory to store random generated instr
+
+  // declaration of class methods
+  task prog_gen();
+
+} // end of class randGenInst
+
+
+
+/*
+  The prog_gen(),is a method which is going to generate valid programs
+  (which consists of valid instructions) to test the risc8.
+  Here the program generation logic is of our won. Users can modify this
+  porgram generation logic as per their requirement.
+  Here we put a very simple logic to generate some simple valid programs,
+  also we restricted the generation of all the contora inst programs to
+  the first few calls of our randomization (refer count <10) to reduce
+  complexity.
+
+  Also we have the constant flow for the programs.Interested users please
+  modify the program generation logic to their need.
+*/
+
+task rand_prog_gen::prog_gen()
+{ // task prog_gen starts here
+  //
+  instr gen_instr =new();
+
+  printf("Creating Random Instruction List and the Sequence...\n");
+  mem[i] = 12'b0; 
+  i      = i+1;
+  for(count=0;count<294;count=count+1) { // count is 294 to fill 2K 'P'data
+    result = gen_instr.randomize();
+    if(result==OK) {
+      if(count<10) { // block to generate the control instruction sequence
+  	temp_k =  i+4;
+  	mem[i] =  {CALL1,temp_k};
+  	i      =  i+1;
+  	mem[i] =  gen_instr.l_loadw_freg;
+  	i      =  i+1;
+  	mem[i] =  gen_instr.l_byte_type[0];
+  	i      =  i+1;
+  	temp_k =  i+4;
+  	mem[i] =  {GOTO,temp_k};
+  	i      =  i+1;
+  	mem[i] =  NOP;
+  	i      =  i+1;
+  	mem[i] =  NOP;
+  	i      =  i+1;
+  	mem[i] =  {RETLW,gen_instr.k_field};
+  	i      =  i+1;
+      }
+      else { // block to generate all byte, bit,instruction sequence
+        mem[i] =  gen_instr.l_load_acc; // clear, load accumulator
+  	i      =  i+1;
+  	mem[i] =  gen_instr.l_load_fsr;
+  	i      =  i+1;
+  	mem[i] =  12'b0000_0010_0100; // writing to FSR for bank selection
+  	i      =  i+1;
+  	mem[i] =  gen_instr.l_loadw_freg;
+  	for(j=0;j<4;j=j+1) {
+    		i      =  i+1;
+    		mem[i] =  gen_instr.l_byte_type[j]; // byte type instr sequence
+  	}
+  	i      =  i+1;
+  	mem[i] =  gen_instr.l_bit_type; // bit type instr
+  	i      =  i+1;
+  	mem[i] =  12'b0000_0010_0110; // write some value to port b
+  	i      =  i+1;
+  	mem[i] =  gen_instr.l_indep_type;
+  	i      =  i+1;
+
+      } 
+    }
+    else {
+       printf("Randomization failed.\n");
+    }
+  } // end of for loop
+
+} // end of task prog_gen
+

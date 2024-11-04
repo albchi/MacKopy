@@ -1,0 +1,150 @@
+/*********************************************************************
+ * SYNOPSYS CONFIDENTIAL                                             *
+ *                                                                   *
+ * This is an unpublished, proprietary work of Synopsys, Inc., and   *
+ * is fully protected under copyright and trade secret laws. You may *
+ * not view, use, disclose, copy, or distribute this file or any     *
+ * information contained herein except pursuant to a valid written   *
+ * license from Synopsys.                                            *
+ *********************************************************************/
+
+//
+//      Copyright (c) 2000 by Qualis Design Corporation. All rights reserved.
+//      
+//
+//      This file contains licensed materials and may used and distributed
+//      provided that this copyright statement is not removed from the file
+//      and that any derivative work contains this copyright notice.
+//
+//      Qualis Design Corporation            Synopsys, Inc.
+//      http://www.qualis.com                http://www.synopsys.com
+//
+// Description:
+//      Basic functional testcase
+//
+// Author:      $Author: badri $
+// Revision:    $Revision: 1.2 $
+//
+
+#include <vera_defines.vrh>
+#ifdef NTB
+#else
+#include "syslog.vrh"
+#include "list.vrh"
+#include "atm_cell.vrh"
+#include "utopia_phy_tx.vrh"
+#include "utopia_phy_rx.vrh"
+#include "th.vrh"
+#endif
+
+//extend the basic atm_cell to add constraints.
+class my_atm_cell extends atm_cell {
+
+  constraint basic {
+    vpi > 0;
+    vpi < 8;
+  }
+  constraint to_some_vpis {
+    vpi dist {0:1:=30, 2:8:=5};
+    vpi !in {5:7};
+  }
+
+}
+
+//
+// Inject cells with the specified VPI on the specified port
+//
+task inject_cells(utopia_phy_tx tx,
+                  integer       count,
+                  integer       vpi = -1)
+{
+    my_atm_cell cell;
+    string   msg;
+
+    tx.log.note();
+    printf("Injecting %0d cells...\n", count);
+    
+    for (; count > 0; count--) {
+       cell = new;
+       cell.hec = cell.compute_hec();
+       tx.log.note();
+       printf("...injecting cell\n");
+       tx.send(cell);
+    }
+}
+
+
+//
+// Receive an expected number of cells with the
+// specified VPI on the specified port
+//
+task receive_cells(utopia_phy_rx rx,
+                   integer       count,
+                   integer       vpi = -1)
+{
+    atm_cell cell;
+    string   msg;
+
+    rx.log.note();
+    printf("Expecting %0d cells...\n", count);
+    
+    for (; count > 0; count--) {
+       void = rx.receive(cell);
+       rx.log.note();
+       printf("...received cell");
+
+       if (vpi > 0) {
+		   if (cell.vpi !== vpi) {
+			  rx.log.error();
+			  printf("Unxpected VPI: %0d instead of %0d\n",
+					  cell.vpi, vpi);
+		   
+		   }
+          printf(" with VPI %0d\n",cell.vpi);
+       } 
+       else {
+          printf(" with VPI %0d\n",cell.vpi);
+       }
+    }
+}
+
+
+function integer testcase(harness h)
+{
+   integer i;
+   integer vpi;
+   reg [7:0] broadcast;
+   reg [15:0] WriteArg;
+   integer cell_count;
+   
+   cell_count = 100;
+   h.log.note();
+   printf("Programming switching context for VPI 0..7...\n");
+
+   for (vpi = 0; vpi < 8; vpi++) {
+      broadcast      = 8'h00;
+      broadcast[vpi] = 1'b1;
+      
+      WriteArg = {8'h00, broadcast};
+      h.sc_write(vpi, WriteArg);
+   }
+   
+  for (i = 0; i < 8; i++) {
+       integer i_tmp;
+       i_tmp = i;
+	   fork {
+		  // Senders
+		  // (class_handle, cell_count, vpi)
+		  inject_cells(h.atm_gen[i_tmp], cell_count, -1);
+
+		  // Receiver
+		  // (class_handle, cell_count, vpi)
+		  receive_cells(h.atm_mon[i_tmp], cell_count, -1);
+	   }
+	   join none
+   }
+   wait_child();
+
+   testcase = 0;
+   return;
+}

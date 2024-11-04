@@ -1,0 +1,15 @@
+==========================================
+Description of the files in this directory
+==========================================
+
+cpu.v : Top-level synthesizable module.
+idec.v : The Instruction Decoder. This module is instanced 
+         underneath the cpu module.
+alu.v : The ALU. This module is instanced underneath the cpu module.
+regs.v : The Register File. This module is instanced underneath the cpu module.
+controller.v : Optional Expansion Module. This is an example module that 
+               shows how anexpansion circuit is added onto the design. 
+               The module implements Traffic Light Controller.
+dram.v : Memory model for Register File 'D'ata memory (it's a Synchronous RAM)
+pram.v : Memory model for Program Memory 'P'ata memory (it's a Synchronous RAM)
+

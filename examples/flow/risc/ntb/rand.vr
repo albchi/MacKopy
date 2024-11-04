@@ -1,0 +1,47 @@
+/*********************************************************************
+ * SYNOPSYS CONFIDENTIAL                                             *
+ *                                                                   *
+ * This is an unpublished, proprietary work of Synopsys, Inc., and   *
+ * is fully protected under copyright and trade secret laws. You may *
+ * not view, use, disclose, copy, or distribute this file or any     *
+ * information contained herein except pursuant to a valid written   *
+ * license from Synopsys.                                            *
+ *********************************************************************/
+
+/*////////////////////////////////////////////////////////////////////////////
+
+   This the top level class object which will generate the random instruction,
+   programs and run, control the random test
+
+////////////////////////////////////////////////////////////////////////////*/
+
+// top level random class object
+
+#include "regressions.vrh"
+
+class randGenInst { 
+  // class member declarations
+  monitor obj_monitor = new();
+  rand_prog_gen rand_test = new();
+ 
+  task  random_diagnostic_test();
+} //end of randGenInst class
+
+task randGenInst::random_diagnostic_test()
+ {
+  rand_test.prog_gen();
+  load_pram();
+  generate_reset();
+  
+  printf("****** EXECUTION STARTS FOR THE RANDOM TEST ******\n");
+  
+  fork {
+    { obj_monitor.validate_decode_logic(); }
+    { obj_monitor.validate_arithmetic_logic(); }
+  } join none
+  wait_child();
+
+   printf("****** RANDOM TEST : SUCCESSFUL ******\n");
+
+} //end of task random_diagnostic_test
+ 

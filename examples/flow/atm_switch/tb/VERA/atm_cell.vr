@@ -1,0 +1,155 @@
+/*********************************************************************
+ * SYNOPSYS CONFIDENTIAL                                             *
+ *                                                                   *
+ * This is an unpublished, proprietary work of Synopsys, Inc., and   *
+ * is fully protected under copyright and trade secret laws. You may *
+ * not view, use, disclose, copy, or distribute this file or any     *
+ * information contained herein except pursuant to a valid written   *
+ * license from Synopsys.                                            *
+ *********************************************************************/
+
+//
+//      Copyright (c) 2000 by Qualis Design Corporation. All rights reserved.
+//      
+//
+//      This file contains licensed materials and may used and distributed
+//      provided that this copyright statement is not removed from the file
+//      and that any derivative work contains this copyright notice.
+//
+//      Qualis Design Corporation            Synopsys, Inc.
+//      http://www.qualis.com                http://www.synopsys.com
+//
+// Description:
+//      Class definitions for UNI ATM cells
+//
+// Author:      $Author: badri $
+// Revision:    $Revision: 1.2 $
+//
+#ifdef NTB
+#else
+#include "list.vrh"
+#endif
+
+//
+// Base ATM cell object
+//
+class atm_cell extends list_el {
+   rand reg [3:0] gfc;
+   rand reg [7:0] vpi;
+   rand reg [15:0] vci;
+   rand reg [ 2:0] pt;
+   rand reg        clp;
+   reg [ 7:0] hec;
+   reg [ 7:0] payload [48];
+
+   reg [7:0] packed_header [5];
+
+   task new(integer gfc = -1,
+            integer vpi = -1,
+            integer vci = -1,
+            integer pt  = -1,
+            integer clp = -1);
+
+   function reg [7:0] compute_hec(reg bad = 'b0);
+   
+   task display();
+   
+   task pack_header();
+   task unpack_header();
+   
+}
+
+
+//-------------------------------------------------------------
+//
+// Class Implementation
+//
+
+task atm_cell::new(integer gfc = -1,
+                   integer vpi = -1,
+                   integer vci = -1,
+                   integer pt  = -1,
+                   integer clp = -1)
+{
+   void = this.randomize();
+
+   if (gfc >= 0) this.gfc = gfc;
+   if (vpi >= 0) this.vpi = vpi;
+   if (vci >= 0) this.vci = vci;
+   if (pt  >= 0) this.pt  = pt;
+   if (clp >= 0) this.clp = clp;
+
+   this.hec = this.compute_hec();
+}
+
+
+//
+// Compute a (bad) HEC value
+//
+function reg [7:0] atm_cell::compute_hec(reg bad = 'b0)
+{
+   reg [7:0] crc;
+
+   this.pack_header();
+   crc = {packed_header[0], packed_header[1],
+          packed_header[2], packed_header[3], 8'h00} % 9'b100000111;
+   crc = crc ^ 8'b01010101;
+
+   // If a bad HEC was requested, invert a random reg
+   if (bad) {
+      crc = crc ^ (8'b00000001 << (random() % 8));
+   }
+   
+   compute_hec = crc;
+}
+
+
+//
+// Display the content of this cell
+//
+task atm_cell::display()
+{
+   integer i;
+   
+   printf("ATM cell:\n");
+   printf("   gfc =  3'b%b\n", this.gfc);
+   printf("   vpi =  8'h%h\n", this.vpi);
+   printf("   vci = 15'h%h\n", this.vci);
+   printf("   pt  =  3'b%b\n", this.pt);
+   printf("   clp =  1'b%b\n", this.clp);
+   printf("   hec =  8'h%h (%s)\n", this.hec,
+          (this.hec == this.compute_hec()) ? "good" : "BAD");
+
+   printf("   pay =");
+   for (i = 0; i < 48; i++) {
+      printf(" %h", this.payload[i]);
+      if ((i % 8) == 7 && i != 47) {
+         printf("\n        ");
+      }
+   }
+   printf("\n");
+}
+
+
+//
+// Pack the header of the cell
+//
+task atm_cell::pack_header()
+{
+   reg [7:0] tmp;
+   
+   '{packed_header[0], packed_header[1], packed_header[2],
+     packed_header[3], packed_header[4]}
+        = {gfc, vpi, vci, pt, clp, hec};
+}
+
+
+//
+// Unpack the header of the cell
+//
+task atm_cell::unpack_header()
+{
+   '{gfc, vpi, vci, pt, clp, hec} = 
+    {packed_header[0], packed_header[1], packed_header[2],
+     packed_header[3], packed_header[4]};
+}

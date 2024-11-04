@@ -1,0 +1,443 @@
+/*********************************************************************
+ * SYNOPSYS CONFIDENTIAL                                             *
+ *                                                                   *
+ * This is an unpublished, proprietary work of Synopsys, Inc., and   *
+ * is fully protected under copyright and trade secret laws. You may *
+ * not view, use, disclose, copy, or distribute this file or any     *
+ * information contained herein except pursuant to a valid written   *
+ * license from Synopsys.                                            *
+ *********************************************************************/
+
+`define   INDF   7'h00
+`define   TMR0   7'h01
+`define   PCL    7'h02
+`define   STATUS 7'h03
+`define   FSR    7'h04
+`define   PORTA  7'h05
+`define   PORTB  7'h06
+`define   PORTC  7'h07
+
+template SnpsRisc8_Cpu_Rules (
+			  debuginst, 
+                          clk, 
+                          reset, 
+                          option, 
+                          debugpc, 
+                          debugstatus, 
+                          debugw, 
+                          fsr, 
+                          portb, 
+                          portc, 
+                          fileaddr, 
+                          tmr0,
+                          mem , 
+                          aluout, 
+                          aluz, 
+                          alucout, 
+                          trisa, 
+                          trisb, 
+                          trisc, 
+                          aluasel, 
+                          alubsel, 
+                          expread, 
+                          expwrite, 
+                          fwe, 
+                          stack1, 
+                          stack2, 
+                          stacklevel, 
+                          prescaler,  
+                          final_address 
+                          ): {
+ 
+clock posedge clk {
+
+//-------------------------------------------------------
+// Rule1: When reset is asserted status register is 'h18'
+//        option reg is 'h3f', pc is 'h7ff and inst, w, 
+//        fsr, stacklevel, prescaler are all set to "zero"
+//-------------------------------------------------------  	
+
+  event reset_tris: (SnpsRisc8_Com_reg_monitor(trisa, 8'hff)
+                    && SnpsRisc8_Com_reg_monitor(trisb, 8'hff)
+                    && SnpsRisc8_Com_reg_monitor(trisc, 8'hff));
+  event Snps_Risc8_Ev_RESET_VALUE_OF_ALL_REGISTERS: 
+    if (reset) then
+      	#1 (SnpsRisc8_Com_status_reset && 
+        SnpsRisc8_Com_option_reset && 
+        SnpsRisc8_Com_pc_reset && 
+        SnpsRisc8_Com_inst_reset && 
+        SnpsRisc8_Com_w_reset && 
+        SnpsRisc8_Com_stacklevel_rst && 
+        SnpsRisc8_Com_prescaler_rst &&
+        SnpsRisc8_Com_reg_monitor(tmr0,8'h00) &&
+        reset_tris);
+	
+//-------------------------------------------------------
+// Rule2:  In indirect addressing, when fsel is 0, INDF
+//         actually addresses the register whose address
+//         is contained in FSR. Otherwise (Direct addressing)
+//         use 5 bits of FSEL (from the Instruction itself) 
+//         and 2 bank bits from the FSR register (bits 6:5).    
+//-------------------------------------------------------
+  
+  event Snps_Risc8_Ev_DIRECT_AND_INDIRECT_ADDRESSING:
+    if (!reset && !(negedge reset)) then (
+       if (SnpsRisc8_Com_reg_monitor(debuginst[4:0], 3'h0)) 
+       then fileaddr == fsr[6:0]  else
+       fileaddr ==  { fsr[6:5], debuginst[4:0] });
+
+
+//-------------------------------------------------------
+// Rule3:  Address mapping based on bank select (fsr[6:5])
+//         and location. 
+//-------------------------------------------------------
+
+  event bank_addr: 
+    if (SnpsRisc8_Com_reg_monitor(fileaddr[6:4], 3'b001)) then 
+    (if (SnpsRisc8_Com_reg_monitor(fileaddr[3], 1'b0)) 
+    then SnpsRisc8_Com_reg_monitor(final_address[6:3], 4'b0001)
+    else SnpsRisc8_Com_reg_monitor(final_address[6:3], 4'b0010)) 
+    else if (SnpsRisc8_Com_reg_monitor(fileaddr[6:4], 3'b011)) 
+    then (if (SnpsRisc8_Com_reg_monitor(fileaddr[3], 1'b0)) 
+    then SnpsRisc8_Com_reg_monitor(final_address[6:3], 4'b0011)
+    else SnpsRisc8_Com_reg_monitor(final_address[6:3], 4'b0100))
+    else if (SnpsRisc8_Com_reg_monitor(fileaddr[6:4], 3'b101)) 
+    then (if (SnpsRisc8_Com_reg_monitor(fileaddr[3], 1'b0)) 
+    then SnpsRisc8_Com_reg_monitor(final_address[6:3], 4'b0101)
+    else SnpsRisc8_Com_reg_monitor(final_address[6:3], 4'b0110)) 
+    else if (SnpsRisc8_Com_reg_monitor(fileaddr[6:4], 3'b111 ))
+    then (if (SnpsRisc8_Com_reg_monitor(fileaddr[3], 1'b0)) 
+    then SnpsRisc8_Com_reg_monitor(final_address[6:3], 4'b0111)
+    else SnpsRisc8_Com_reg_monitor(final_address[6:3], 4'b1000)) 
+    else SnpsRisc8_Com_reg_monitor(final_address[6:3], 4'b0000);
+			  
+  event Snps_Risc8_Ev_ADDRESS_MAPPING_BASED_ON_BANK_SELECT: 
+    if (!reset && !(negedge reset)) then 
+    (if (SnpsRisc8_Com_reg_monitor(fileaddr[4:3], 2'b01)) 
+    then  SnpsRisc8_Com_reg_monitor(final_address[6:3], 4'b0000)
+    else bank_addr);
+
+//-------------------------------------------------------
+// Rule4:  Data address must be within 00 to 7f
+//-------------------------------------------------------
+
+  event Snps_Risc8_Ev_DATA_ADDRESS_MUST_BE_WITHIN_00_7F:  
+    if (!reset && !(negedge reset)) then (final_address >= 7'h00) 
+	&& (final_address <= 7'h7f);				    	
+     	
+//-------------------------------------------------------
+// Rule5:  If an alu operations results to zero then the 
+//         zero register bit of status reg must be set.
+//-------------------------------------------------------
+
+  event Snps_Risc8_Ev_STATUS_BIT2_SET_IF_ALU_OP_RESULT_0:  
+    if ( SnpsRisc8_Com_reg_monitor(aluout, 8'b0) && 
+         SnpsRisc8_Com_zero_inst) then  
+         #1 SnpsRisc8_Com_reg_monitor(debugstatus[2], 1'b1);
+
+//-------------------------------------------------------
+// Rule6:  If an alu operation results a carry then the
+//         carry bit must be set.
+//-------------------------------------------------------
+
+  event Snps_Risc8_Ev_CARRY_BIT_STS_REG_SET_IF_ALU_OP_RSLTS_CARRY: 
+      if ( SnpsRisc8_Com_carry_inst && alucout) then 
+         #1 SnpsRisc8_Com_reg_monitor(debugstatus[0], 1'b1);
+	
+//-------------------------------------------------------
+// Rule7: For CLR inst the addressed register must have 
+//        a value of 8'h00 after one clock cycle
+//-------------------------------------------------------      
+
+  var [4:0] fsel;
+  fsel <= debuginst[4:0];
+
+  event e_clr_spl_reg:
+    if (SnpsRisc8_Com_reg_monitor(fsel, 3'h0)
+    || SnpsRisc8_Com_reg_monitor(fsel, 3'h4))
+    then SnpsRisc8_Com_fsr_reset else
+    if (SnpsRisc8_Com_reg_monitor(fsel, 3'h1)) then 
+    SnpsRisc8_Com_reg_monitor(tmr0, 8'h00) else
+    if (SnpsRisc8_Com_reg_monitor(fsel, 3'h2)) then 
+    SnpsRisc8_Com_pcl_clr else
+    if (SnpsRisc8_Com_reg_monitor(fsel, 3'h3)) then 
+    SnpsRisc8_Com_reg_monitor(debugstatus, 8'h00) else
+    if (SnpsRisc8_Com_reg_monitor(fsel, 3'h6)) then 
+    SnpsRisc8_Com_reg_monitor(portb, 8'h00) else
+    if (SnpsRisc8_Com_reg_monitor(fsel, 3'h7)) then  
+    SnpsRisc8_Com_reg_monitor(portc, 8'h00);
+
+  event Snps_Risc8_Ev_ON_CLR_INST_ADDRS_REG_VALUE_IS_0: 
+    if (SnpsRisc8_Com_clr) then  
+    (if (SnpsRisc8_Com_reg_monitor(debuginst[5], 1'b0)) 
+       then #1 SnpsRisc8_Com_reg_monitor(debugw, 8'h00) 
+    else if (SnpsRisc8_Com_specialsel) 
+       then #1 e_clr_spl_reg 
+    else
+       SnpsRisc8_Com_reg_monitor(aluout, 8'h00));
+     	
+
+//-------------------------------------------------------
+// Rule8:  Upon a byte instruction based on the 5th bit of 
+//         inst reg the result  be stored either in w reg 
+//         or register file.
+//-------------------------------------------------------
+
+  event e_output_reg:
+    if ( fileaddr == `PORTB ) then
+       #1  portb == past(aluout) else
+    if ( fileaddr == `PORTC ) then
+       #1 portc == past(aluout) else
+    if ( fileaddr == `FSR ) then
+       #1 fsr == past(aluout) else
+    if (fileaddr == `STATUS) then
+       #1 debugstatus == past(aluout) else
+    if (fileaddr == `TMR0 && option[5]) then
+       #1 tmr0 == past(aluout) else
+    if (fileaddr == `PCL) then
+       debugpc[7:0] == past(aluout); 
+    
+ event Snps_Risc8_Ev_BYTE_INST_RSLT_BASED_ON_5_BIT_INST_REG :   
+   if ( SnpsRisc8_Com_byte_inst ) then
+   (if (debuginst[5] == 1'b0) then 
+    #1 debugw == past(aluout) 
+    else e_output_reg);
+
+//-------------------------------------------------------
+// Rule9: For literal instructions the destination is w 
+//        register
+//-------------------------------------------------------
+
+  event Snps_Risc8_Ev_LITERAL_INST_RSLT_IN_W_REG:  
+    if (SnpsRisc8_Com_literal || SnpsRisc8_Com_movlw) 
+       then #1 debugw == past(aluout);
+
+
+//-------------------------------------------------------
+// Rule10: During sleep inst the status register bit TO 
+//         is set and PD is cleared.
+//-------------------------------------------------------
+// ******* THIS IS NOT IMPLEMENTED IN THE DESIGN ********
+
+//  event Snps_Risc8_Ev_SLEEP_INST_TO_IS_1_PD_IS_0: 
+//    if (SnpsRisc8_Com_sleep) then 
+//       #1 SnpsRisc8_Com_reg_monitor(debugstatus[4:3], 2'b10);	
+
+//-------------------------------------------------------
+// Rule11:  For Option instruction contents of w register 
+//        are loaded into option register.
+//-------------------------------------------------------
+
+  event Snps_Risc8_Ev_OPTION_INST_VALUE_OF_W_IN_OPTION_REG: 
+    if (SnpsRisc8_Com_option_inst) then 
+       #1 option == debugw ;
+
+//-------------------------------------------------------
+// Rule12: When reset is active tris registers are loaded
+//         with the value 'hff' and  TRIS inst, loads 
+//         the content of w register to the corresponding 
+//         tris regs.
+//-------------------------------------------------------
+
+  event load_tris: 
+       if ( SnpsRisc8_Com_reg_monitor(fileaddr, `PORTA)) then 
+          #1 trisa == debugw else
+       if ( SnpsRisc8_Com_reg_monitor(fileaddr, `PORTB)) then 
+          #1 trisb == debugw else
+       if ( SnpsRisc8_Com_reg_monitor(fileaddr, `PORTC)) then 
+          #1 trisc == debugw ;
+			 
+  event Snps_Risc8_Ev_TRIS_INST_CORRESP_REG_LOADED_WITH_W: 
+       if (SnpsRisc8_Com_tris) then load_tris;
+	
+//-------------------------------------------------------
+// Rule13: For call instruction the 8th bit of pc is 
+//         cleared, PCL is loaded with instruction
+//         word and pc[10:9] with debugstatus[6:5]
+//-------------------------------------------------------
+	
+  var [10:0] PC_IN_C;    
+  PC_IN_C <= {debugstatus[6:5], 1'b0, debuginst[7:0]};    
+  event Snps_Risc8_Ev_CALL_INST_8th_BIT_OF_PC_IS_CLR:
+    if (SnpsRisc8_Com_call) then #1 debugpc == PC_IN_C;
+	
+//-------------------------------------------------------
+// Rule14: For goto instruction pc[8:0] with instruction
+//         word and pc[10:9] with status[6:5]
+//-------------------------------------------------------
+
+  event GOTO: debuginst[11:9] == 3'b101;
+  var [10:0] PC_IN_G;
+  PC_IN_G  <= {debugstatus[6:5], debuginst[8:0]};
+  event Snps_Risc8_Ev_GOTO_INST_PC80_IW_PC_10_9_STATUS65:
+    if ended(GOTO) then  #1 debugpc == PC_IN_G;
+
+//-------------------------------------------------------
+// Rule15: During branch instruction the instruction reg 
+//         is forced to NOP
+//-------------------------------------------------------
+
+  event e_NOP: #1 debuginst == 12'b0000_0000_0000;
+  event Snps_Risc8_Ev_BR_INST_INST_REG_FORCED_TO_NOP:
+	if (SnpsRisc8_Com_branch) then e_NOP;
+	
+//-------------------------------------------------------
+// Rule16: For RETLW instruction, if stacklevel is 1 then
+//         pc gets the stack1 value else if stacklevel is 
+//         2 then pc is loaded with stack2 value.
+//-------------------------------------------------------
+
+  event Snps_Risc8_Ev_RETLW_PC_STACK1_IF_SL_LT1_ELSE_STACK2:
+    if (SnpsRisc8_Com_retlw) then 
+       (if (stacklevel[1]) then #1 debugpc == stack2
+       else #1 debugpc == stack1);
+
+
+//-------------------------------------------------------
+// Rule17:  For first call pc value is stored in stack1 
+//          and for sequential second call pc value goes 
+//          into stack2
+//-------------------------------------------------------
+  var [10:0] PC; init PC = 0;
+  PC <= (SnpsRisc8_Com_call) ? debugpc : PC;
+  event Snps_Risc8_Ev_1ST_CALL_PC_VAL_STACK1_NEXT_STACK2:
+    if (SnpsRisc8_Com_call) then
+       (if (SnpsRisc8_Com_reg_monitor(stacklevel, 2'b00)) 
+       then #1 stack1 == PC else
+       if (SnpsRisc8_Com_reg_monitor(stacklevel, 2'b01)) 
+       then #1 stack2 == PC);
+
+//-------------------------------------------------------
+// Rule18:  For skip instructions only NOP is forced into 
+//          inst and note that pc value does not change
+//-------------------------------------------------------
+
+  event Snps_Risc8_Ev_SKIP_INST_NOP_IS_FORCED_INTO_INST_REG: 
+    if (SnpsRisc8_Com_skip) then  e_NOP;
+
+//-------------------------------------------------------
+// Rule19: Fetch and execute pipeline
+//         Lenght of any inst other than branch is 1, 
+//         branch takes 2 clk cycles
+//-------------------------------------------------------
+  event e_fetch: !SnpsRisc8_Com_branch ;            
+  event e_execute: 
+        Snps_Risc8_Ev_BYTE_INST_RSLT_BASED_ON_5_BIT_INST_REG
+     || Snps_Risc8_Ev_ON_CLR_INST_ADDRS_REG_VALUE_IS_0 
+     || Snps_Risc8_Ev_LITERAL_INST_RSLT_IN_W_REG
+     || Snps_Risc8_Ev_OPTION_INST_VALUE_OF_W_IN_OPTION_REG 
+//   || Snps_Risc8_Ev_SLEEP_INST_TO_IS_1_PD_IS_0
+     || Snps_Risc8_Ev_SKIP_INST_NOP_IS_FORCED_INTO_INST_REG;
+
+  event Snps_Risc8_Ev_LENGTH_OF_ANY_INST_NOT_BR_IS_1: 
+      if (!reset && !(negedge reset)) then
+       (if (ended(e_fetch)) then  
+       length[1] in e_execute else
+       length[2] in Snps_Risc8_Ev_BR_INST_INST_REG_FORCED_TO_NOP);
+
+//-------------------------------------------------------
+// Rule20: PC is always incremented by one unless its value 
+//         is changed by a branch instruction or some pc 
+//         value change instruction like MOV instruction
+//-------------------------------------------------------
+  event e_pc_inc: 
+    if (!(SnpsRisc8_Com_branch || 
+          SnpsRisc8_Com_movwf_pc || 
+          SnpsRisc8_Com_movf_pc) && 
+          !(past(reset))) then 
+       	  #1 debugpc == past(debugpc) + 1;
+  event Snps_Risc8_Ev_PC_INC_BY_1_UNLESS_BR_INST: 
+        if (!reset) then  e_pc_inc;
+	
+//-------------------------------------------------------
+// Rule21: For a read operation from exp, expread must be
+//         asserted and expwrite write operation
+//-------------------------------------------------------
+
+  bool exp_read:  (SnpsRisc8_Com_alua_sel || 
+                   SnpsRisc8_Com_alub_sel);
+  event Snps_Risc8_Ev_EXPOP_EXPREAD_1_READ_EXPWRITE_1_WRITE: 
+    if (SnpsRisc8_Com_expsel) then
+       (if (exp_read) then expread  
+       else if (fwe) then  expwrite );     
+	
+//-------------------------------------------------------
+// Rule22: The max call number of sequential calls are 2
+//-------------------------------------------------------
+
+//forbid_bool ((stacklevel == 2'b10),"MAX CALL LIMIT REACHED",clk );
+//forbid_bool ( "MAX CALL LIMIT REACHED", (stacklevel == 2'b11));
+  event Snps_Risc8_Ev_MAX_SEQ_CALL_LIMIT_IS_2:
+        if (!reset) then stacklevel <= 2'b11;
+}
+
+
+
+  assert Snps_Risc8_RESET_VALUE_OF_ALL_REGISTERS:
+    check (Snps_Risc8_Ev_RESET_VALUE_OF_ALL_REGISTERS);
+
+  assert Snps_Risc8_DIRECT_AND_INDIRECT_ADDRESSING:
+    check (Snps_Risc8_Ev_DIRECT_AND_INDIRECT_ADDRESSING);
+ 
+  assert Snps_Risc8_ADDRESS_MAPPING_BASED_ON_BANK_SELECT:
+    check(Snps_Risc8_Ev_ADDRESS_MAPPING_BASED_ON_BANK_SELECT);
+
+  assert Snps_Risc8_DATA_ADDRESS_MUST_BE_WITHIN_00_7F:
+    check(Snps_Risc8_Ev_DATA_ADDRESS_MUST_BE_WITHIN_00_7F);
+ 
+  assert Snps_Risc8_STATUS_BIT2_SET_IF_ALU_OP_RESULT_0:
+    check(Snps_Risc8_Ev_STATUS_BIT2_SET_IF_ALU_OP_RESULT_0);
+
+  assert Snps_Risc8_CARRY_BIT_STS_REG_SET_IF_ALU_OP_RSLTS_CARRY:
+    check(Snps_Risc8_Ev_CARRY_BIT_STS_REG_SET_IF_ALU_OP_RSLTS_CARRY);
+ 
+  assert Snps_Risc8_ON_CLR_INST_ADDRS_REG_VALUE_IS_0:
+    check(Snps_Risc8_Ev_ON_CLR_INST_ADDRS_REG_VALUE_IS_0);
+
+  assert Snps_Risc8_BYTE_INST_RSLT_BASED_ON_5_BIT_INST_REG:
+    check(Snps_Risc8_Ev_BYTE_INST_RSLT_BASED_ON_5_BIT_INST_REG);
+
+  assert Snps_Risc8_LITERAL_INST_RSLT_IN_W_REG:
+    check(Snps_Risc8_Ev_LITERAL_INST_RSLT_IN_W_REG);
+
+// ******* THIS IS NOT IMPLEMENTED IN THE DESIGN ********
+//  assert Snps_Risc8_SLEEP_INST_TO_IS_1_PD_IS_0:
+//    check(Snps_Risc8_Ev_SLEEP_INST_TO_IS_1_PD_IS_0);
+
+  assert Snps_Risc8_OPTION_INST_VALUE_OF_W_IN_OPTION_REG:
+    check(Snps_Risc8_Ev_OPTION_INST_VALUE_OF_W_IN_OPTION_REG);
+
+  assert Snps_Risc8_TRIS_INST_CORRESP_REG_LOADED_WITH_W:
+    check(Snps_Risc8_Ev_TRIS_INST_CORRESP_REG_LOADED_WITH_W);
+
+  assert Snps_Risc8_CALL_INST_8th_BIT_OF_PC_IS_CLR:
+    check(Snps_Risc8_Ev_CALL_INST_8th_BIT_OF_PC_IS_CLR);
+
+  assert Snps_Risc8_GOTO_INST_PC80_IW_PC_10_9_STATUS65:
+    check(Snps_Risc8_Ev_GOTO_INST_PC80_IW_PC_10_9_STATUS65);
+
+  assert Snps_Risc8_BR_INST_INST_REG_FORCED_TO_NOP:
+    check(Snps_Risc8_Ev_BR_INST_INST_REG_FORCED_TO_NOP);
+
+  assert Snps_Risc8_RETLW_PC_STACK1_IF_SL_LT1_ELSE_STACK2:
+    check(Snps_Risc8_Ev_RETLW_PC_STACK1_IF_SL_LT1_ELSE_STACK2);
+
+  assert Snps_Risc8_1ST_CALL_PC_VAL_STACK1_NEXT_STACK2:
+    check(Snps_Risc8_Ev_1ST_CALL_PC_VAL_STACK1_NEXT_STACK2);
+
+  assert Snps_Risc8_SKIP_INST_NOP_IS_FORCED_INTO_INST_REG:
+    check(Snps_Risc8_Ev_SKIP_INST_NOP_IS_FORCED_INTO_INST_REG);
+
+  assert Snps_Risc8_LENGTH_OF_ANY_INST_NOT_BR_IS_1:
+    check(Snps_Risc8_Ev_LENGTH_OF_ANY_INST_NOT_BR_IS_1);
+
+  assert Snps_Risc8_PC_INC_BY_1_UNLESS_BR_INST:
+    check(Snps_Risc8_Ev_PC_INC_BY_1_UNLESS_BR_INST);
+
+  assert Snps_Risc8_EXPOP_EXPREAD_1_READ_EXPWRITE_1_WRITE:
+    check(Snps_Risc8_Ev_EXPOP_EXPREAD_1_READ_EXPWRITE_1_WRITE);
+
+  assert Snps_Risc8_MAX_SEQ_CALL_LIMIT_IS_2:
+    check(Snps_Risc8_Ev_MAX_SEQ_CALL_LIMIT_IS_2);
+
+ }

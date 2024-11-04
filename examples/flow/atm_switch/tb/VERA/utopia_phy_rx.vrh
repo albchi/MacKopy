@@ -1,0 +1,33 @@
+/////////////////////////////////////////////////////////////////
+// Vera Header file created from utopia_phy_rx.vr 
+/////////////////////////////////////////////////////////////////
+#ifndef INC__TMP_UTOPIA_PHY_RX_VRH
+#define INC__TMP_UTOPIA_PHY_RX_VRH
+
+//SHAWN
+port utopia_tx_port
+{
+   data;         // [7:0] data                         (ATM->PHY)
+   soc;          // Start-of-cell marker               (ATM->PHY)
+   enb;          // Active-low byte enable             (PHY->ATM)
+   full_clav;    // Cell/octet flow control            (PHY->ATM)
+   clk;          // All signals sampled at rising edge (ATM->PHY)
+}
+
+typedef class list ;
+extern class utopia_phy_rx { 
+  static bit NON_BLOCK;
+  static bit BLOCKING;
+  syslog log;
+  event idle;
+  task new (
+    utopia_tx_port rx_port,
+    string name = "unamed Utopia PHY Rx"
+  );
+  function bit receive (
+    var atm_cell cell,
+    bit blocking = 1'b1
+  );
+}
+
+#endif

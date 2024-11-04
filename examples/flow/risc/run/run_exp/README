@@ -1,0 +1,16 @@
+/*
+ ***  Copyright (c) 2000 by Synopsys Inc.
+  ***  ALL RIGHTS RESERVED
+*/
+
+Run Expansion circuit test with FSM coverage ON.
+================================================
+% vcs -ntb -f ./risc8_ova.files -cm line+cond+fsm+tgl +vc ../../directc/alu.c ../../directc/decoder.c -l risc8.comp.log $*
+% simv +exp -cm line+cond+fsm+tgl -ova_report risc8.ova.log -l risc8.run.log
+        +exp, is used with $test$plusargs to load expansion circuit program
+        at run time. The expansion circuit has fsm implemented in it, so we
+        can check the fsm coverage also.
+
+% vcs -cm_pp gui -cm line+cond+fsm+tgl
+To run the example:
+	Use Makefile

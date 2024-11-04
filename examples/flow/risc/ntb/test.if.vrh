@@ -1,0 +1,32 @@
+#ifndef INC_CPU_IF_VRH
+#define INC_CPU_IF_VRH
+
+interface test {
+    output         clk          OUTPUT_EDGE  OUTPUT_SKEW ;
+    output [7:0]   expdin       OUTPUT_EDGE  OUTPUT_SKEW ;
+
+    input          expread      INPUT_EDGE INPUT_SKEW;
+    input          expwrite     INPUT_EDGE INPUT_SKEW;
+    input  [7:0]   expdout      INPUT_EDGE INPUT_SKEW;
+    input  [6:0]   expaddr      INPUT_EDGE INPUT_SKEW;
+    input  [10:0]  debugpc      INPUT_EDGE INPUT_SKEW;
+    input  [7:0]   debugstatus  INPUT_EDGE INPUT_SKEW;
+    input  [11:0]  debuginst    INPUT_EDGE INPUT_SKEW;
+
+    inout          reset        OUTPUT_EDGE  INPUT_EDGE OUTPUT_SKEW INPUT_SKEW;
+    inout          Xtraffic     OUTPUT_EDGE INPUT_EDGE OUTPUT_SKEW INPUT_SKEW;
+    inout          wwe          OUTPUT_EDGE INPUT_EDGE OUTPUT_SKEW INPUT_SKEW;
+    inout          fwe          OUTPUT_EDGE INPUT_EDGE OUTPUT_SKEW INPUT_SKEW;
+    inout  [10:0]  paddr        INPUT_EDGE   OUTPUT_EDGE OUTPUT_SKEW INPUT_SKEW;
+    inout  [7:0]   portain      OUTPUT_EDGE INPUT_EDGE OUTPUT_SKEW INPUT_SKEW;
+    inout  [7:0]   portbout     INPUT_EDGE OUTPUT_EDGE OUTPUT_SKEW INPUT_SKEW;
+    inout  [7:0]   portcout     INPUT_EDGE OUTPUT_EDGE OUTPUT_SKEW INPUT_SKEW;
+    inout  [7:0]   debugw       INPUT_EDGE OUTPUT_EDGE OUTPUT_SKEW INPUT_SKEW;
+    inout  [1:0]   hwy          INPUT_EDGE OUTPUT_EDGE OUTPUT_SKEW INPUT_SKEW;
+    inout  [1:0]   cntry        INPUT_EDGE OUTPUT_EDGE OUTPUT_SKEW INPUT_SKEW;
+    inout  [7:0]   aluout       OUTPUT_EDGE INPUT_EDGE OUTPUT_SKEW INPUT_SKEW;
+    inout  [11:0]  pdata        OUTPUT_EDGE  INPUT_EDGE OUTPUT_SKEW INPUT_SKEW;
+
+    }  
+
+#endif

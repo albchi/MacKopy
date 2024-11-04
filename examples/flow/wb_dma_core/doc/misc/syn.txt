@@ -1,0 +1,60 @@
+System verilog 3.0 Synthesisable constructs
+
+Supported Constructs
+            Enums
+            Struct
+            Array
+            typedef
+            bit
+            logic
+            longint
+            int
+            char
+            shortint
+            byte
+            automatic
+            static
+            Slice
+            Do while
+            while
+            always_comb
+            always_latch
+            always_ff
+            iff
+            break
+            continue
+            modports
+
+
+            
+Unsupported
+            Unpacked unions
+            Static variables in task & function in interface
+            Generic interface : sparingly
+            Export import tasks & functions
+            Implicit ports
+            for
+
+
+           
+ Ignored
+            wait
+            for
+            time
+            display
+            assertions
+
+
+
+
+
+
+
+
+
+
+
+
+
+:1
+

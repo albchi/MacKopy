@@ -1,0 +1,1 @@
+vcs -sverilog  wbif.v wbif_mast.v wbif_slave.v

@@ -1,0 +1,122 @@
+/*********************************************************************
+ * SYNOPSYS CONFIDENTIAL                                             *
+ *                                                                   *
+ * This is an unpublished, proprietary work of Synopsys, Inc., and   *
+ * is fully protected under copyright and trade secret laws. You may *
+ * not view, use, disclose, copy, or distribute this file or any     *
+ * information contained herein except pursuant to a valid written   *
+ * license from Synopsys.                                            *
+ *********************************************************************/
+
+/*////////////////////////////////////////////////////////////////////////////
+
+	The main program which has definition of all tasks, functions
+	and classes and also control the program flow.
+	
+///////////////////////////////////////////////////////////////////////////*/	
+
+#define OUTPUT_EDGE  PHOLD
+#define OUTPUT_SKEW  #1
+#define INPUT_SKEW  #-1
+#define INPUT_EDGE   PSAMPLE
+#include <vera_defines.vrh>
+
+// define interfaces, and verilog_node here if necessary
+#include "test.if.vrh"
+
+// define other header files here if necessary
+#include "regressions.vrh"
+
+
+// declare external tasks/classes/functions here if necessary
+
+// declaration of Direct C function alu
+extern "C" function integer alu_dir ( 
+                                  integer a,
+                                  integer b,
+                                  integer OpCode,
+                                  integer c_in,
+                                  var integer c_out,
+                                  var integer z_out
+                                );
+                                
+// declaration of Direct C function Decode_Instruction
+extern "C" function integer decode_instruction (
+                                                bit[11:0] InSt,
+                                                var integer dist1,
+                                                var string mnemonic 
+                                               );
+
+
+// declare verilog_tasks here if necessary
+
+// declaration of verilog task to load the basic.rom and controller.rom in PRAM
+hdl_task hdl_load_pram (
+                         bit [20*20-1:0] rom_file
+                       ) "test_top.hdl_load_pram";
+
+// declaration of verilog task to access DUT signals
+hdl_task get_alu (
+                   bit [7:0] alu_out,
+                   bit cout, 
+                   bit zout,
+                   bit [7:0] a,
+                   bit [7:0] b, 
+                   bit [3:0] op, 
+                   bit cin
+                 ) "test_top.get_alu";
+
+// declaration of verilog task to load rendom promgram in PRAM
+hdl_task hdl_random_load_pram (
+                                bit [10:0] ran_addr, 
+                                bit [11:0] ran_data
+                              ) "test_top.hdl_random_load_pram";
+
+
+// declare class typedefs here if necessary
+//
+typedef class basic;
+typedef class exp;
+typedef class randGenInst;
+
+
+//Main program starts here
+
+program  cpu_test
+{ 
+  // define all the golbal variables here
+  //
+  basic       obj_basic;    // Instantiates basic  class
+  exp         obj_exp;      // Instantiates exp  class
+  randGenInst obj_random;   // Instantiates rand class
+
+  // Type your test program here:
+  
+  // passing run time arguments to simv to run different tests
+  /* here we have used test_plusargs feature of Native Testbench, which 
+     will help us to pass runtime arguments to simv.
+     this will also help us to avoid multiple compilation.
+     By passing anyone argument(random,exp),we can control the 
+     type of testwe are going to execute.
+     if we pass +random, then we can run random test.
+     if we pass +exp, then we can run the expansion circuit tests
+     if we dont pass any argument, then we will run basic tests.
+  */
+  if ( test_plusargs("random") ){
+       obj_random = new; 
+       obj_random.random_diagnostic_test(); // to run random test
+  }
+  else {
+    if( test_plusargs("exp") ) { 
+        obj_exp     = new;   
+        obj_exp.exp_test(); // to run expansion test
+    }
+    else {
+        obj_basic   = new;     
+        obj_basic.basic_directed_test(); // to run basic test
+    }
+  }
+
+} // end of program cpu_test
+
+

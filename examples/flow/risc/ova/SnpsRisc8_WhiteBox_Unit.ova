@@ -1,0 +1,89 @@
+/*********************************************************************
+ * SYNOPSYS CONFIDENTIAL                                             *
+ *                                                                   *
+ * This is an unpublished, proprietary work of Synopsys, Inc., and   *
+ * is fully protected under copyright and trade secret laws. You may *
+ * not view, use, disclose, copy, or distribute this file or any     *
+ * information contained herein except pursuant to a valid written   *
+ * license from Synopsys.                                            *
+ *********************************************************************/
+
+
+unit ova_SnpsRisc8_Cpu # (parameter word_depth = 70) (
+					logic [11:0] debuginst, 
+					logic clk, 
+					logic reset, 
+					logic [7:0] option, 
+					logic [10:0] debugpc, 
+					logic [ 7:0] debugstatus, 
+					logic [7:0] debugw, 
+					logic [7:0] fsr, 
+					logic [7:0] portb, 
+					logic [7:0] portc, 
+					logic [6:0] fileaddr, 
+					logic [7:0] tmr0, 
+					logic [7:0] mem [0:word_depth-1], 
+					logic [7:0] aluout, 
+					logic aluz, 
+					logic alucout, 
+					logic [7:0] trisa,
+					logic [7:0] trisb, 
+					logic [7:0] trisc, 
+					logic [1:0] aluasel, 
+					logic [1:0] alubsel, 
+					logic expread, 
+					logic expwrite, 
+					logic fwe, 
+					logic [10:0] stack1, 
+					logic [10:0] stack2, 
+					logic [1:0] stacklevel,
+					logic [7:0] prescaler,
+					logic [6:0] final_address
+					);
+
+SnpsRisc8_Cpu_Bool  SnpsRisc8_Com (.debuginst(debuginst),
+                                   .clk(clk),
+                             	   .option(option),
+                                   .debugpc(debugpc),
+                                   .debugstatus(debugstatus),
+                                   .debugw(debugw),
+                                   .fsr(fsr),
+                                   .fileaddr(fileaddr),
+                                   .aluz(aluz),
+                                   .aluasel(aluasel),
+                                   .alubsel(alubsel),
+                                   .stacklevel(stacklevel),
+                                   .prescaler(prescaler));
+                             
+SnpsRisc8_Cpu_Rules SnpsRisc8_CPU (.debuginst(debuginst), 
+                                   .clk(clk), 
+                                   .reset(reset), 
+                                   .option(option), 
+                                   .debugpc(debugpc), 
+                                   .debugstatus(debugstatus), 
+                                   .debugw(debugw), 
+                                   .fsr(fsr), 
+                                   .portb(portb), 
+                                   .portc(portc), 
+                                   .fileaddr(fileaddr), 
+                                   .tmr0(tmr0),
+                                   .mem(mem), 
+                                   .aluout(aluout), 
+                                   .aluz(aluz),  
+                                   .alucout(alucout), 
+                                   .trisa(trisa), 
+                                   .trisb(trisb), 
+                                   .trisc(trisc), 
+                                   .aluasel(aluasel), 
+                                   .alubsel(alubsel), 
+                                   .expread(expread), 
+                                   .expwrite(expwrite), 
+                                   .fwe(fwe), 
+                                   .stack1(stack1), 
+                                   .stack2(stack2), 
+                                   .stacklevel(stacklevel), 
+                                   .prescaler(prescaler), 
+                                   .final_address(final_address) );
+ 
+endunit 
+

@@ -1,0 +1,237 @@
+/*********************************************************************
+ * SYNOPSYS CONFIDENTIAL                                             *
+ *                                                                   *
+ * This is an unpublished, proprietary work of Synopsys, Inc., and   *
+ * is fully protected under copyright and trade secret laws. You may *
+ * not view, use, disclose, copy, or distribute this file or any     *
+ * information contained herein except pursuant to a valid written   *
+ * license from Synopsys.                                            *
+ *********************************************************************/
+
+//
+//      Copyright (c) 2000 by Qualis Design Corporation. All rights reserved.
+//      
+//
+//      This file contains licensed materials and may used and distributed
+//      provided that this copyright statement is not removed from the file
+//      and that any derivative work contains this copyright notice.
+//
+//      Qualis Design Corporation            Synopsys, Inc.
+//      http://www.qualis.com                http://www.synopsys.com
+//
+// Description:
+//      Bus-functional receiver model for a Utopia interface.
+//      The bus-functional model is considered a PHY-layer device.
+//
+// Author:      $Author: badri $
+// Revision:    $Revision: 1.2 $
+//
+
+#include <vera_defines.vrh>
+
+//
+// Virtual port for a ATM->PHY Utopia interface
+//
+port utopia_tx_port
+{
+   data;         // [7:0] data                         (ATM->PHY)
+   soc;          // Start-of-cell marker               (ATM->PHY)
+   enb;          // Active-low byte enable             (PHY->ATM)
+   full_clav;    // Cell/octet flow control            (PHY->ATM)
+   clk;          // All signals sampled at rising edge (ATM->PHY)
+}
+
+#ifdef NTB
+#else
+#include "syslog.vrh"
+#include "list.vrh"
+#include "atm_cell.vrh"
+#endif
+
+//
+// Utopia PHY transactor object
+//
+class utopia_phy_rx {
+
+   // Symbolic constants
+   static reg NON_BLOCK = 1'b0;
+   static reg BLOCKING  = 1'b1;
+   
+   syslog         log;            // Local logger
+   local list     cells;          // Cell received
+   local utopia_tx_port rx_port;  // Port to Rx on
+
+   event idle;                    // ON when idle for 500 clock cycles
+
+   task new(utopia_tx_port rx_port,                // Rx on this port
+            string name = "unamed Utopia PHY Rx");
+
+   // Receive a cell - returns non-zero if invalid
+   function reg receive(var atm_cell  cell,              // The cell to rx into
+                        reg           blocking = 1'b1);  // Blocking or not
+
+   // Private methods
+   local task rx_deamon();
+   local function reg [7:0] rx_byte(var reg soc);
+}
+
+
+///////////////////////////////////////////////////////////////
+//
+// Class implementation
+//
+
+//
+// Constructor
+//
+// Will "connect" this instance of the transactor to the
+// specified port.
+//
+task utopia_phy_rx::new(utopia_tx_port rx_port,
+                        string         name = "unamed Utopia PHY Rx")
+{
+   this.log     = new(name);
+   this.cells   = new({name, " Q"});
+   this.rx_port = rx_port;
+
+   trigger(OFF, this.idle);
+
+   // Start the deamons
+   fork
+      this.rx_deamon();
+   join none
+}
+
+
+//
+// Receive an ATM cell
+// If blocking, this task waits until the cell
+// has been received and returns 0.
+// If non-blocking and the no cells have been received yet,
+// it returns 1.
+//
+function reg utopia_phy_rx::receive(var atm_cell  cell,
+                                    reg           blocking = 1'b1)
+{
+   receive = 1'b0;
+   
+   // If not blocking and the queue is empty,
+   // return non-zero
+   if (!blocking && this.cells.length() == 0) {
+      receive = 1'b1;
+      return;
+   }
+   
+   // If blocking, wait until there is something
+   // in the queue
+   if (blocking) {
+      sync(ANY, this.cells.not_empty);
+   }
+   
+   // Return the cell at the head of the queue into
+   // the cell "receiver" object.
+   {
+       list_el temp;
+       temp = this.cells.shift();
+       cast_assign(cell, temp);
+   }
+}
+
+
+//
+// Process that physically receives cells
+// from the interface
+//
+task utopia_phy_rx::rx_deamon()
+{
+   atm_cell cell;
+   utopia_tx_port temp;
+   temp = rx_port;
+   
+   // Initialize the port
+   temp.$full_clav = 1'b1;
+   
+   // Never exit
+   while(1) {
+      integer   i;
+      reg [7:0] data;
+      reg       soc;
+
+      // Wait for the start of the next cell
+      data = rx_byte(soc);
+      while (!soc) {
+         data = rx_byte(soc);
+      }
+
+      // This loop will be used to re-start the
+      // reception of a cell if a SoC is found
+      // in the middle of a cell being received.
+      // The short cell will be dropped.
+      cell = new;
+      while (1) {
+         // A new cell is being received
+         cell.packed_header[0] = data;
+
+         // Receive the remainder of the header
+         for (i = 1; i < 5; i++) {
+            cell.packed_header[i] = rx_byte(soc);
+            if (soc) break;
+         }
+         if (soc) continue;
+         
+         // Receive the payload of the header
+         for (i = 0; i < 48; i++) {
+            cell.payload[i] = rx_byte(soc);
+            if (soc) break;
+         }
+         if (soc) continue;
+
+         // A full cell has been received
+         break;
+      }
+         
+      // Append the cell to the rx list
+      cell.unpack_header();
+      this.cells.push(cell);
+   }
+}
+
+
+//
+// Receive the next byte of a cell.
+//
+function reg [7:0] utopia_phy_rx::rx_byte(var reg soc)
+{
+   integer idle_count;
+   reg EnbHolder;
+   utopia_tx_port temp;
+   temp = this.rx_port;
+
+   // Wait until the ATM layer presents a valid byte
+   idle_count = 0;
+`ifdef NTB
+   @1 temp.$enb =?= 8'bxxxxxxxx;
+`else
+   @1 temp.$enb == 8'bxxxxxxxx;
+`endif
+   EnbHolder = temp.$enb;
+
+   while (EnbHolder !== 1'b0) {
+`ifdef NTB
+      @1 temp.$enb =?= 8'bxxxxxxxx;
+`else
+      @1 temp.$enb == 8'bxxxxxxxx;
+`endif
+      EnbHolder = temp.$enb;
+
+      // The ATM layer may never be sending something!
+      if (idle_count++ > 500) {
+         trigger(ON, this.idle);
+      }
+   }
+   trigger(OFF, this.idle);
+
+   // Sample the next byte
+   soc     = temp.$soc;
+   rx_byte = temp.$data;
+}

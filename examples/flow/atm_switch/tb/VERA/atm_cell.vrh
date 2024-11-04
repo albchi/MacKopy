@@ -1,0 +1,36 @@
+// Vera Header File Generated from atm_cell.vr
+
+#ifndef INC__ATM_CELL_0_VRH
+#define INC__ATM_CELL_0_VRH
+
+typedef class list ;
+
+extern class atm_cell extends list_el
+{
+    bit [3:0] gfc;
+    bit [7:0] vpi;
+    bit [15:0] vci;
+    bit [2:0] pt;
+    bit clp;
+    bit [7:0] hec;
+    bit [7:0] payload[48];
+    bit [7:0] packed_header[5];
+    task new(
+        integer gfc =  - 1, 
+        integer vpi =  - 1, 
+        integer vci =  - 1, 
+        integer pt =  - 1, 
+        integer clp =  - 1
+        );
+    function bit [7:0] compute_hec(
+        bit bad = 'b00
+        );
+    task display(
+    );
+    task pack_header(
+    );
+    task unpack_header(
+    );
+}
+
+#endif

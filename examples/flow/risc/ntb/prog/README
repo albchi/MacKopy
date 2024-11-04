@@ -1,0 +1,12 @@
+==========================================
+Description of the files in this directory
+==========================================
+
+basic.asm : .ASM file. 
+BASIC.HEX : Intex hex format file.
+basic.rom : The "Basic Confidence" test program which exercises all 
+            the instructions.
+
+controller.asm : .ASM file. 
+CONTROLLER.HEX : Intex hex format file.
+controller.rom : The test program to check the Traffic Light Controller.

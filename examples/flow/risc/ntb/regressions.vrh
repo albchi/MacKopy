@@ -1,0 +1,13 @@
+// Standard definitions and macros for running regressions.
+
+#define ASSERT(Cond)                                        \
+{                                                           \
+    if (Cond)                                               \
+    {                                                       \
+    }                                                       \
+    else                                                    \
+    {                                                       \
+        printf("Error: at %s(%0d) \n", __FILE__, __LINE__); \
+        exit(1);                                            \
+    }                                                       \
+}

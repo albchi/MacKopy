@@ -1,0 +1,530 @@
+/*********************************************************************
+ * SYNOPSYS CONFIDENTIAL                                             *
+ *                                                                   *
+ * This is an unpublished, proprietary work of Synopsys, Inc., and   *
+ * is fully protected under copyright and trade secret laws. You may *
+ * not view, use, disclose, copy, or distribute this file or any     *
+ * information contained herein except pursuant to a valid written   *
+ * license from Synopsys.                                            *
+ *********************************************************************/
+
+//
+//      Copyright (c) 2000 by Qualis Design Corporation. All rights reserved.
+//      
+//
+//      This file contains licensed materials and may used and distributed
+//      provided that this copyright statement is not removed from the file
+//      and that any derivative work contains this copyright notice.
+//
+//      Qualis Design Corporation            Synopsys, Inc.
+//      http://www.qualis.com                http://www.synopsys.com
+//
+// Description:
+//      Generic list object.
+//      All objects on a list must ultimately be derived from
+//      the 'list_el' class.
+//
+// Author:      $Author: badri $
+// Revision:    $Revision: 1.2 $
+//
+
+#include <vera_defines.vrh>
+
+#ifdef NTB
+#else
+#include "syslog.vrh"
+#endif
+
+//
+// Base type for all objects that must be put on a list.
+// Use cast_assign() to promote this base class back to the
+// appropriate class.
+//
+typedef class list;
+
+class list_el {
+   local syslog  log;       // Local logger
+   local list_el next_el;   // Next element in the list
+   local list_el prev_el;   // Previous element in the list
+   local list    in_list;   // In this list
+
+   // Event to synchronize with the element being taken off a list.
+   // This event is triggered ONE_SHOT: all pending sync() will be
+   // resumed when triggered.
+   //
+   event unlisted;
+
+   task new();
+
+   // Insert into the specified list
+   // This method should not be used directly
+   task insert(list_el next_el,   
+               list_el prev_el,
+               list    in_list);
+
+   // Walk along the list
+   function list_el next_in_list();    // Go toward the end
+   function list_el prev_in_list();    // Go toward the beginning
+
+   // Modify the list around this element
+   task remove_from_list();             // Remove this element from the list
+   task append_in_list(list_el el);     // Insert after this element
+   task prepend_in_list(list_el el);    // Insert before this element
+
+   // Get the list this element is in
+   function list is_in_list();
+}
+
+
+//
+// The list object itself
+//
+class list {
+   local syslog  log;      // Local logger
+   local list_el first_el; // Pointer to first element in the list
+   local list_el last_el;  // Pointer to last element in the list
+   local list_el iter_el;  // Current position of the list iterator
+
+   // Events to synchronize with the list becoming (non) empty.
+   // These events are triggered ON/OFF: sync() will not wait if
+   // the list is already (non) empty.
+   // e.g. sync(ANY, l.not_empty);
+   //
+   event not_empty;
+   event is_empty;
+
+   task new(string name = "unamed list");
+
+   function integer length();  // What is its length?
+
+   //
+   // The list functions follow the PERL convention
+   //
+   task push(list_el el);      // Add at the end
+   function list_el pop();     // Remove from the end
+   task unshift(list_el el);   // Add the the front
+   function list_el shift();   // Removed from the front
+
+   //
+   // List iterator
+   //
+   function list_el first();   // Reset the iterator to begining
+   function list_el last();    // Reset the iterator to end
+   function list_el curr();    // Current position of the iterator
+   function list_el next();    // Advance the iterator forward
+   function list_el prev();    // Advance the iterator backward
+}
+
+
+//////////////////////////////////////////////////////////////
+//
+// Implementation of the list_el class
+//
+
+//
+// Constructor
+//
+task list_el::new()
+{
+   this.log     = new("list element");
+   this.prev_el = null;
+   this.next_el = null;
+   this.in_list = null;
+}
+
+//
+// Insert into the specified list
+//
+task list_el::insert(list_el next_el,   
+                     list_el prev_el,
+                     list    in_list)
+{
+   this.prev_el = next_el;
+   this.next_el = prev_el;
+   this.in_list = in_list;
+}
+
+//
+// Go to the next element in the list
+//
+function list_el list_el::next_in_list()
+{
+   next_in_list = this.next_el;
+}
+
+//
+// Go to the previous element in the list
+//
+function list_el list_el::prev_in_list()
+{
+   prev_in_list = this.prev_el;
+}
+
+//
+// Remove this element from the list
+//
+task list_el::remove_from_list()
+{
+   // Is this element in a list?
+   if (this.in_list == null) {
+      this.log.warning();
+      printf("Attempt to remove element not on a list\n");
+      return;
+   }
+   
+   // If this is the first element in the list,
+   // simply shift the list
+   if (this.prev_el == null) {
+      void = this.in_list.shift();
+      return;
+   }
+
+   // If the is the last element in the list,
+   // simply pop the list
+   if (this.next_el == null) {
+      void = this.in_list.pop();
+      return;
+   }
+
+   // Is the iterator on this element?
+   if (this.in_list.curr() == this) {
+      // Move it to the one before
+      void = this.in_list.prev();
+   }
+
+   // Otherwise, extract the element
+   this.prev_el.next_el = this.next_el;
+   this.next_el.prev_el = this.prev_el;
+   
+   // This element is not part of any list anymore
+   this.prev_el = null;
+   this.next_el = null;
+   this.in_list = null;
+}
+
+
+//
+// Insert a new element after this one
+//
+task list_el::append_in_list(list_el el)
+{
+   // Verify that the new element
+   // is not already on a list
+   if (el.in_list != null) {
+      this.log.fatal("Attempt to append an element already on a list");
+      return;
+   }
+   
+   // If the is the last element in the list,
+   // simply push the list
+   if (this.next_el == null) {
+      this.in_list.push(el);
+      return;
+   }
+
+   // Otherwise, insert the element after this one
+   el.in_list = this.in_list;
+   el.next_el = this.next_el;
+   el.prev_el = this;
+   
+   this.next_el.prev_el = el;
+   this.next_el         = el;
+}
+
+
+//
+// Insert a new element after this one
+//
+task list_el::prepend_in_list(list_el el)
+{
+   // Verify that the new element
+   // is not already on a list
+   if (el.in_list != null) {
+      this.log.fatal("Attempt to prepend an element already on a list");
+      return;
+   }
+   
+   // If this is the first element in the list,
+   // simply unshift the list
+   if (this.prev_el == null) {
+      this.in_list.unshift(el);
+      return;
+   }
+
+
+   // Otherwise, insert the element before this one
+   el.in_list = this.in_list;
+   el.next_el = this;
+   el.prev_el = this.prev_el;
+   
+   this.prev_el.next_el = el;
+   this.prev_el         = el;
+}
+
+
+//
+// Get the list this element is in
+//
+function list list_el::is_in_list()
+{
+   is_in_list = this.in_list;
+   return;
+}
+
+
+////////////////////////////////////////////////////////////////////
+//
+// The list object itself
+//
+
+//
+// Constructor
+//
+task list::new(string name = "unamed list")
+{
+   this.log = new(name);
+
+   first_el = null;
+   last_el  = null;
+   iter_el  = null;
+
+   trigger(ON,  this.is_empty);
+   trigger(OFF, this.not_empty);
+}
+
+//
+// Compute then return the length of a list
+//
+function integer list::length()
+{
+   integer i = 0;
+   list_el p;
+
+   for (p = first_el; p != null; p = p.next_in_list()) {
+      i++;
+   }
+   length = i;
+}
+
+
+//
+// Add an element at the end of the list
+//
+task list::push(list_el el)
+{
+   // Verify that the new element
+   // is not already on a list
+   if (el.is_in_list() != null) {
+      this.log.fatal("Attempt to push an element already on a list");
+      return;
+   }
+
+   // If the list is empty, this needs to be at the
+   // start of the list too!
+   if (this.first_el == null) {
+      this.first_el = el;
+      this.last_el  = el;
+      el.insert(null, null, this);
+      
+      trigger(ON,  this.not_empty);
+      trigger(OFF, this.is_empty);
+
+      return;
+   }
+   
+   // Insert the element at the end of the list
+   this.last_el.insert(this.last_el.prev_in_list(), el, this);
+   el.insert(this.last_el, null, this);
+   this.last_el = el;
+}
+
+
+//
+// Remove and return the element at the end of the list
+//
+function list_el list::pop()
+{
+   // Verify that the list is not empty
+   if (this.last_el == null) {
+      this.log.fatal("Attempt to pop from an empty list");
+      return;
+   }
+
+   // Return the last element
+   pop = this.last_el;
+   
+   // Is the iterator on this element?
+   if (this.iter_el == pop) {
+      // Move it to the one before
+      void = this.prev();
+   }
+
+   // If there is only one element in the list,
+   // remove it from the start too!
+   if (this.first_el == this.last_el) {
+      this.first_el = null;
+      this.last_el  = null;
+      
+      trigger(OFF, this.not_empty);
+      trigger(ON,  this.is_empty);
+
+   } else {
+   
+      // Unthread the element from the list
+      this.last_el = this.last_el.prev_in_list();
+      this.last_el.insert(this.last_el.prev_in_list(), null, this);
+   }
+   
+   pop.insert(null, null, null);
+
+   // Signal that this element was removed from a list
+   trigger(pop.unlisted);
+}
+
+
+//
+// Add an element at the end of the list
+//
+task list::unshift(list_el el)
+{
+   // Verify that the new element
+   // is not already on a list
+   if (el.is_in_list() != null) {
+      this.log.fatal("Attempt to push an element already on a list");
+      return;
+   }
+
+   // If the list is empty, this needs to be at the
+   // end of the list too!
+   if (this.last_el == null) {
+      this.first_el = el;
+      this.last_el  = el;
+      el.insert(null, null, this);
+      
+      trigger(ON,  this.not_empty);
+      trigger(OFF, this.is_empty);
+
+      return;
+   }
+   
+   // Insert the element at the start of the list
+   this.first_el.insert(el, this.first_el.next_in_list(), this);
+   el.insert(null, this.first_el, this);
+   this.first_el = el;
+}
+
+
+//
+// Remove and return the element at the start of the list
+//
+function list_el list::shift()
+{
+   // Verify that the list is not empty
+   if (this.first_el == null) {
+      this.log.fatal("Attempt to shift from an empty list");
+      return;
+   }
+
+   // Return the first element
+   shift = this.first_el;
+   
+   // Is the iterator on this element?
+   if (this.iter_el == shift) {
+      // Move it to the one after
+      void = this.next();
+   }
+
+   // If there is only one element in the list,
+   // remove it from the end too!
+   if (this.first_el == this.last_el) {
+      this.first_el = null;
+      this.last_el  = null;
+      
+      trigger(OFF, this.not_empty);
+      trigger(ON,  this.is_empty);
+
+   } else {
+   
+      // Unthread the element from the list
+      this.first_el = this.first_el.next_in_list();
+      this.first_el.insert(null, this.first_el.next_in_list(), this);
+   }
+
+   shift.insert(null, null, null);
+
+   // Signal that this element was removed from a list
+   trigger(shift.unlisted);
+}
+
+
+//
+// Reset the iterator to the first element in the list
+// and return that element
+//
+function list_el list::first()
+{
+   this.iter_el = first_el;
+
+   first = this.iter_el;
+}
+
+
+//
+// Reset the iterator to the last element in the list
+// and return that element
+//
+function list_el list::last()
+{
+   this.iter_el = last_el;
+
+   last = this.iter_el;
+}
+
+
+//
+// Return the corrent position of the iterator
+//
+function list_el list::curr()
+{
+   curr = this.iter_el;
+}
+
+
+//
+// Move the iterator toward the end of the list
+// and return that element
+//
+function list_el list::next()
+{
+   // If the iterator is not initialized or has reached
+   // the end, reset to the start
+   if (this.iter_el == null) {
+      next = this.first();
+      return;
+   }
+
+   // Move the iterator toward the end
+   this.iter_el = this.iter_el.next_in_list();
+
+   next = this.iter_el;
+}
+
+
+//
+// Move the iterator toward the start of the list
+// and return that element
+//
+function list_el list::prev()
+{
+   // If the iterator is not initialized or has reached
+   // the start, reset to the end
+   if (this.iter_el == null) {
+      prev = this.last();
+      return;
+   }
+
+   // Move the iterator toward the start
+   this.iter_el = this.iter_el.prev_in_list();
+
+   prev = this.iter_el;
+}

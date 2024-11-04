@@ -1,0 +1,196 @@
+/*********************************************************************
+ * SYNOPSYS CONFIDENTIAL                                             *
+ *                                                                   *
+ * This is an unpublished, proprietary work of Synopsys, Inc., and   *
+ * is fully protected under copyright and trade secret laws. You may *
+ * not view, use, disclose, copy, or distribute this file or any     *
+ * information contained herein except pursuant to a valid written   *
+ * license from Synopsys.                                            *
+ *********************************************************************/
+
+/*//////////////////////////////////////////////////////////////////////////////
+
+  This file has all the golbal tasks definitions used in this verifications
+ 
+//////////////////////////////////////////////////////////////////////////////*/
+
+/*  All global tasks definitions are starting here */   
+
+/*  
+  task which loads the randomly generated instructions present 
+  in the Native Testbench temporary memory into the design memory
+  (pram memory) using a for loop 
+*/
+
+#include "regressions.vrh"
+
+task load_pram()
+{ // task load_pram starts here
+  // declaration of task variables
+  //
+  integer addr;
+  printf("\n--Loading  pram memory with randomly generated Instructions--\n" );
+  for(addr=0;addr<2048;addr=addr+1) {
+    hdl_random_load_pram(addr,obj_random.rand_test.mem[addr]); // hdl task 
+  }
+} // task load_pram ends here
+
+
+
+/* 
+  task to generate the traffic detector signal "Xtraffic" 
+  of the expansion circuit.
+  This task drives this signal with a high & low value 
+  for 150 clock cycles alternatively,thus making it toggle. 
+*/
+
+task generate_traffic_detector()
+{ // task generate_traffic_detector starts here
+  //
+  repeat(50) {
+    test.Xtraffic = 1'b0; // drive Xtraffic with value 0 for 150  cycles
+    repeat(50) @(posedge CLOCK);
+    test.Xtraffic = 1'b1; // drive Xtraffic with value 0 for 150  cycles
+    repeat(50) @(posedge CLOCK);
+  }
+} // task generate_traffic_detector ends here
+
+
+
+
+/*
+  task to generate the reset signal of the design.
+  This is an synchronous active high reset.
+  Reset signal is driven n the order 0 - 1 - 0
+*/
+
+task generate_reset()
+{ // task generate_reset starts here
+  //
+  @(posedge CLOCK);
+  test.reset = 1'b0;
+  @(posedge CLOCK);
+  test.reset = 1'b1; // drive the reset signal  with 1  (Reseting)
+  repeat(2) @(posedge CLOCK);
+  test.reset =1'b0;  // disabling Reset
+  printf("**** GENERATING RESET **** \n Reset=%b \n",test.reset);
+  repeat(2) @(posedge CLOCK);
+  printf(" Reset=%b \n**** END RESET **** \n\n",test.reset);
+
+} // task generate_reset ends here   
+
+
+
+/* 
+  task to drive I/O device porta.
+  Here porta is driven with two values alternatively for 32 clock cycles.
+  (Specific to the basic test which constitutes of a test which needs to
+  see some value on porta  for atleast 12 cycles and toggling. 
+*/
+
+task  drive_porta()
+{ // task drive_porta starts here
+  //
+  repeat(100) {
+    test.portain = 8'h55; // drive porta  with  value1  for 32 cycles
+    repeat(32) @(posedge CLOCK);
+    test.portain = 8'hAA; // drive porta  with value2  for  32 cycles
+    repeat(32) @(posedge CLOCK);
+  }
+} // task drive_porta ends here
+
+
+
+/* 
+  task to verify the value on I/O device portb after every monitor 
+  on it is the expected value.
+*/
+
+task  verify_portb()
+{ // task verify_portb starts here
+  // declarations of task variables
+  //
+  bit[7:0]  j=8'h00;
+
+  fork
+    {
+     while(1) {
+       @0,1  test.portbout == j; // an expect
+       j=j+1;
+       delay(1);
+       if(j==9) 
+         { break; }
+       @(test.portbout); // this while loop works for change in test.portbout
+     }
+  } join none
+
+} // task verify_portb ends here
+
+
+
+/*
+  task which gives us the complete program flow or the execution 
+  details regarding the Program Counter value,the actual Instruction 
+  taking place(mnemonic), the  register file and the accumalator values.   
+*/
+
+task program_flow_info(string mnemonic)
+{ // task program_flow_info starts here
+  // declaration of task variables
+  //
+  bit [11:0] last_pc;
+
+  // instructions with no arguments
+  //
+  if((mnemonic=="NOP")||(mnemonic=="CLRW")||(mnemonic=="CLRWDT")||(mnemonic=="OPTION")||(mnemonic=="SLEEP")) {
+    printf("\tPC ---> %0d\t%s\n",test.debugpc,mnemonic);
+  }
+
+  // byte oriented instructions
+  else 
+    if(test.debuginst[11:10]==2'b00) {
+      printf("\tPC ---> %0d\t%s\t%0d(0x%0d),\t%0d\n",test.debugpc,mnemonic,\
+              test.debuginst[4:0],test.debuginst[11:0],test.debuginst[5]);
+      if(test.debuginst[5]==0)
+        printf("\tAccumalator=%0d\n",test.debugw);
+    }
+
+    // bit oriented instructions
+    else
+      if(test.debuginst[11:10]==2'b01) {
+        printf("\tPC ---> %0d\t%s\t%0d,\t%0d(0x%0d)\n",test.debugpc,mnemonic,\
+                test.debuginst[7:5],test.debuginst[4:0],test.debuginst[11:0]);
+      }
+
+
+      // control instructions
+      else 
+        if(test.debuginst[11:10]==2'b10) {
+          if(mnemonic=="GOTO" ) {
+            printf("\tPC ---> %0d\t%s\t%0d(0x%0d)\n",test.debugpc,mnemonic,\
+                    test.debuginst[7:0],test.debuginst[11:0]);
+            printf("\t\t\t ...%s  (0X%0d)\n","Branching to the location : ",\
+                    test.debuginst[7:0]);
+          }
+          else 
+            if(mnemonic=="CALL") {
+              printf("\tPC ---> %0d\t%s\t%0d(0x%0d)\n",test.debugpc,mnemonic,\
+                      test.debuginst[7:0],test.debuginst[11:0]);
+              printf("\t\t\t ...%s  (0x%0d)\n","Calling the subroutine at \
+                       the location :",test.debuginst[7:0]);
+            }
+            else
+              printf("\tPC ---> %0d\t%s\t%0d(0x%0d)\n",test.debugpc,mnemonic,\
+                       test.debuginst[7:0],test.debuginst[11:0]);
+      }
+
+      // Literal instructions
+      else 
+        if(test.debuginst[11:10]==2'b11) {
+          printf("\tPC ---> %0d\t%s\t%0d(0x%0d),\tAccumalator=%0d\n",\
+                  test.debugpc,mnemonic,test.debuginst[7:0],\
+                  test.debuginst[11:0],test.debugw);
+        }
+
+} // task program_flow_info ends here
+

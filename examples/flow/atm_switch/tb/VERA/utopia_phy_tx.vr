@@ -1,0 +1,229 @@
+/*********************************************************************
+ * SYNOPSYS CONFIDENTIAL                                             *
+ *                                                                   *
+ * This is an unpublished, proprietary work of Synopsys, Inc., and   *
+ * is fully protected under copyright and trade secret laws. You may *
+ * not view, use, disclose, copy, or distribute this file or any     *
+ * information contained herein except pursuant to a valid written   *
+ * license from Synopsys.                                            *
+ *********************************************************************/
+
+//
+//      Copyright (c) 2000 by Qualis Design Corporation. All rights reserved.
+//      
+//
+//      This file contains licensed materials and may used and distributed
+//      provided that this copyright statement is not removed from the file
+//      and that any derivative work contains this copyright notice.
+//
+//      Qualis Design Corporation            Synopsys, Inc.
+//      http://www.qualis.com                http://www.synopsys.com
+//
+// Description:
+//      Bus-functional transmitter model for a Utopia interface.
+//      The bus-functional model is considered a PHY-layer device.
+//
+// Author:      $Author: badri $
+// Revision:    $Revision: 1.2 $
+//
+
+#include <vera_defines.vrh>
+
+//
+// Virtual port for a PHY->ATM Utopia interface
+//
+port utopia_rx_port
+{
+   data;         // [7:0] data                         (PHY->ATM)
+   soc;          // Start-of-cell marker               (PHY->ATM)
+   enb;          // Active-low byte enable             (ATM->PHY)
+   empty_clav;   // Cell/octet flow control            (PHY->ATM)
+   clk;          // All signals sampled at rising edge (ATM->PHY)
+}
+
+
+#ifdef NTB
+#else
+#include "syslog.vrh"
+#include "list.vrh"
+#include "atm_cell.vrh"
+#endif
+
+//
+// Utopia PHY transactor object
+//
+class utopia_phy_tx {
+
+   // Symbolic constants
+   static reg NON_BLOCK = 1'b0;
+   static reg BLOCKING  = 1'b1;
+   
+   syslog         log;            // Local logger
+   local list     cells;          // Cell to be transmitted
+   local utopia_rx_port tx_port;  // Port to Tx on
+
+   task new(utopia_rx_port tx_port,                // Tx on this port
+            string name = "unamed Utopia PHY Tx");
+
+   // Send a cell
+   task send(atm_cell  cell,              // The cell to send
+             reg       blocking = 1'b1);  // Blocking or not
+
+   // Create a gap between cells
+   task gap(integer n_cycles);            // # of cycles in gap
+
+   // Private methods
+   local task tx_deamon();
+   local task tx_cell(atm_cell cell);
+   local task tx_byte(reg [7:0] data,
+                      reg       soc   = 1'b0);
+}
+
+
+///////////////////////////////////////////////////////////////
+//
+// Class implementation
+//
+
+//
+// Constructor
+//
+// Will "connect" this instance of the transactor to the
+// specified port.
+//
+task utopia_phy_tx::new(utopia_rx_port tx_port,
+                        string         name = "unamed Utopia PHY Tx")
+{
+   this.log     = new(name);
+   this.cells   = new({name, " Q"});
+   this.tx_port = tx_port;
+
+   // Start the deamons
+   fork
+      this.tx_deamon();
+   join none
+}
+
+
+//
+// Send a cell
+// If blocking, this task waits until the cell
+// has been sent. If non-blocking, the cell is
+// appended to the list of cells and returns
+// immediately.
+//
+task utopia_phy_tx::send(atm_cell  cell,             // The cell to send
+                         reg       blocking = 1'b1)  // Blocking or not
+{
+   this.cells.push(cell);
+
+   // If this is a blocking "send",
+   // wait until the cell is taken out of the queue
+   if (blocking) {
+      sync(ANY, cell.unlisted);
+   }
+}
+
+
+//
+// Create a gap in the cell stream
+// equal to the number of specified clock cycles.
+// Waits for the queue of pending cells to be
+// sent to be flushed
+//
+task utopia_phy_tx::gap(integer n_cycles)  // # of cycles in gap
+{
+   // Wait until all pending cells have been transmitted
+   sync(ANY, this.cells.is_empty);
+
+   // Wait for the specified number of clock cycles
+   @(n_cycles) tx_port.$data = void;
+}
+
+//
+// Process that physically transmits cells
+// on the interface
+//
+task utopia_phy_tx::tx_deamon()
+{
+   atm_cell cell;
+   utopia_rx_port temp;
+   temp = tx_port;
+   
+   // Initialize the port
+   temp.$data       = 8'hxx soft;
+   temp.$soc        = 1'b0  soft;
+   temp.$empty_clav = 1'b0  soft;
+   
+   // Never exit
+   while(1) {
+      // Wait for a cell to be available
+      sync(ANY, this.cells.not_empty);
+
+      // Indicate that a cell is available
+      temp.$empty_clav = 1'b1;
+
+      // Send the next cell in the list
+      {
+         list_el temp;
+         temp = this.cells.first();
+         cast_assign(cell, temp);
+      }
+      this.tx_cell(cell);
+
+      // This cell has been sent.
+      // Remove it from the list
+      //
+      // Do not remove until it has been sent
+      // because the 'blocking' operation depends
+      // on the cell being "unlisted"
+      // once it has been sent
+      void = this.cells.shift();
+   }
+}
+
+
+//
+// Send a cell over the Utopia interface
+//
+// This task MUST be called BEFORE the
+// next rising edge on "clk" where SoC will
+// be asserted
+//
+task utopia_phy_tx::tx_cell(atm_cell cell)
+{
+   integer i;
+
+   // First, send the header
+   cell.pack_header();
+   for(i = 0; i < 5; i++) {
+      this.tx_byte(cell.packed_header[i], i == 0);
+   }
+
+   // Then send the payload
+   for(i = 0; i < 48; i++) {
+      this.tx_byte(cell.payload[i]);
+   }
+}
+
+
+//
+// Send the next byte of a cell.
+//
+task utopia_phy_tx::tx_byte(reg [7:0] data,
+                            reg       soc   = 1'b0)
+{
+   utopia_rx_port temp;
+   temp = this.tx_port;
+
+   // The implicit synchronization between sampling and driving
+   // will ensure that each byte is send in separate cycles.
+   
+   // The ATM layer should be ready to receive within
+   // a reasonable amount of time!
+   @1,100 temp.$enb == 1'b0;
+
+   // Drive the next byte
+   temp.$soc  = soc;
+   temp.$data = data;
+}

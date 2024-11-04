@@ -1,0 +1,60 @@
+/////////////////////////////////////////////////////////////////
+// Vera Header file created from list.vr 
+/////////////////////////////////////////////////////////////////
+#ifndef INC__TMP_LIST_VRH
+#define INC__TMP_LIST_VRH
+
+typedef class list ;
+extern class list_el { 
+  event unlisted;
+  task insert (
+    list_el next_el,
+    list_el prev_el,
+    list in_list
+  );
+  function list_el next_in_list (
+  );
+  function list_el prev_in_list (
+  );
+  task remove_from_list (
+  );
+  task append_in_list (
+    list_el el
+  );
+  task prepend_in_list (
+    list_el el
+  );
+  function list is_in_list (
+  );
+}
+extern class list { 
+  event not_empty;
+  event is_empty;
+  task new (
+    string name = "unamed list"
+  );
+  function integer length (
+  );
+  task push (
+    list_el el
+  );
+  function list_el pop (
+  );
+  task unshift (
+    list_el el
+  );
+  function list_el shift (
+  );
+  function list_el first (
+  );
+  function list_el last (
+  );
+  function list_el curr (
+  );
+  function list_el next (
+  );
+  function list_el prev (
+  );
+}
+
+#endif
