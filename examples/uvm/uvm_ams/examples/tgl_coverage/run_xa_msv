@@ -1,3 +1,0 @@
-/bin/rm -rf simv* csrc
-vcs +ad=xa_msv.init +cli+3 top.v -debug_all -R
-

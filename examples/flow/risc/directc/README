@@ -1,7 +1,0 @@
-==========================================
-Description of the files in this directory
-==========================================
-
-alu.c : This file contains ALU logic implementation using C.
-decoder.c : This contains decoder logic implementation using C.
-

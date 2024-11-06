@@ -1,9 +1,0 @@
-==========================================
-Description of the files in this directory
-==========================================
-
-hex2v.c : A C program that translates Intel HEX format data into the 
-	  Verilog $readmemh compatible .ROM file.
-
-To run the example:
-	Use Makefile

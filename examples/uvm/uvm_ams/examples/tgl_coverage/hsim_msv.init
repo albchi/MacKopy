@@ -1,4 +1,0 @@
-choose hsim -i all_spice.spi -o outputs/hsim;
-no_thru_net_opt all;
-a2d loth=0.6 hith=1.8 node=test.i1.mon;
-
